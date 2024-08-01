@@ -16,7 +16,7 @@ RUN python3.8 -m pip install --upgrade pip
 
 # Install Flask
 RUN git clone https://github.com/MaruvkaLab/Abbot
-RUN cd Abbot
+RUN cd /Abbot
 RUN python3.8 -m pip install -r requirements.txt
 
 # Set the default command to run when starting the container
