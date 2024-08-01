@@ -1,4 +1,7 @@
 FROM ubuntu:20.04
+# whats the point... anyways its a SINGLETON thing...
+
+
 
 # Set non-interactive mode for apt-get to avoid prompts
 ENV DEBIAN_FRONTEND=noninteractive
@@ -16,8 +19,8 @@ RUN python3.8 -m pip install --upgrade pip
 
 # Install Flask
 RUN git clone https://github.com/MaruvkaLab/Abbot
-RUN cd /Abbot
-RUN python3.8 -m pip install -r requirements.txt
+RUN python3.8 -m pip install -r /Abbot/requirements.txt
 
-# Set the default command to run when starting the container
-CMD ["gunicorn -w 4 -b :8080 main:app"]
+WORKDIR /Abbot
+# CMD ["/bin/bash"]
+ENTRYPOINT ["/usr/local/bin/gunicorn", "-w", "4", "-b", ":8080", "main:app"]
