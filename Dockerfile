@@ -20,4 +20,4 @@ RUN cd /Abbot
 RUN python3.8 -m pip install -r requirements.txt
 
 # Set the default command to run when starting the container
-CMD ["/bin/bash"]
+CMD ["gunicorn -w 4 -b :8080 main:app"]
