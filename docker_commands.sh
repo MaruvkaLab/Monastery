@@ -22,3 +22,7 @@ docker rm abbot_ex
 
 # remove dangling images
 docker rmi $(docker images -f "dangling=true" -q)
+
+
+# list images
+sudo docker images
