@@ -1,5 +1,5 @@
 import sqlite3, os, time
-
+from dataclasses import dataclass
 from typing import Tuple, List
 
 
@@ -18,6 +18,8 @@ def create_texas_table():
     table_creation_query = '''
         CREATE TABLE IF NOT EXISTS samples (
             SAMPLE_UUID TEXT PRIMARY KEY,
+            FEMALE INTEGER NOT NULL,
+            SIZE INTEGER NOT NULL,
             STATUS INTEGER NOT NULL,
             WORKER_NODE TEXT NOT NULL
         );
@@ -28,32 +30,34 @@ def create_texas_table():
     connection.close()
 
 
-def add_samples_to_db(uuids: List[str]):
+@dataclass
+class Sample:
+    uuid: str
+    female: bool
+    size: int
+
+
+def add_samples_to_db(samples: List[Sample]):
     connection, cursor = get_connection()
-    insert_query = "INSERT INTO samples (SAMPLE_UUID, STATUS, WORKER_NODE) VALUES (?, ?, ?)"
-    for uuid in uuids:
-        cursor.execute(insert_query, (uuid, 0, "0"))
+    insert_query = "INSERT INTO samples (SAMPLE_UUID, FEMALE, SIZE, STATUS, WORKER_NODE) VALUES (?, ?, ?, ?, ?)"
+    for s in samples:
+        cursor.execute(insert_query, (s.uuid, int(s.female), s.size, 0, "0"))
     connection.commit()
     cursor.close()
     connection.close()
 
 
-def add_uuids_from_file(fp: str):
-    with open(fp, 'r') as croc:
-        uuids = croc.readlines()
-    add_samples_to_db([a.strip() for a in uuids])
-
-
-def mark_and_select_from_samples(worker_node_id: str):
+def mark_and_select_from_samples(worker_node_id: str, maximum_size: int):
     # returns a sample name if there are any left
     # otherwise returns None
     connection, cursor = get_connection()
     # Check if the user with the specified ID exists
-    check_query = "SELECT * FROM samples WHERE status=0 LIMIT 1"
-    cursor.execute(check_query)
+    check_query = "select * from samples where SIZE == (select MAX(SIZE) from samples where STATUS==0 and SIZE<?);"
+    cursor.execute(check_query, (maximum_size, ))
     variable = cursor.fetchone()
     try:
         sample_uuid = variable[0]
+        is_female = variable[1]
     except TypeError:  # all samples have been marked
         return None
     update_query = f"UPDATE samples SET status=1, worker_node=? WHERE sample_uuid=?"
@@ -63,11 +67,11 @@ def mark_and_select_from_samples(worker_node_id: str):
     confirmation_query = f"SELECT * FROM samples WHERE sample_uuid=? LIMIT 1"
     cursor.execute(confirmation_query, (sample_uuid, ))
     relevant_row = cursor.fetchone()
-    sample_uuid_worker_node = relevant_row[2]
+    sample_uuid_worker_node = relevant_row[4]
     if sample_uuid_worker_node == worker_node_id:
-        return sample_uuid
+        return sample_uuid, is_female
     else:
-        return mark_and_select_from_samples(worker_node_id)
+        return mark_and_select_from_samples(worker_node_id, maximum_size)
 
 
 def reset_db():
@@ -98,6 +102,7 @@ def mark_sample_as_completed(gdc_id: str):
 
 if __name__ == '__main__':
     # add_sample_to_db()
-    reset_db()
+    # reset_db()
     # print(mark_and_select_from_samples("croc_trap_123"))
     # add_uuids_from_file("/home/avraham/MaruvkaLab/Texas/uuid_samples.txt")
+    reset_db()

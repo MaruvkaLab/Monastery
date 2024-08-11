@@ -1,0 +1,10 @@
+Median coad size
+cut -f5 | sort | tail -85 | head -1
+is 212 GB
+
+Total size
+cut -f5 | paste -sd+ | bc
+is 52 TB
+
+672 GB should be large enough
+paste -d+ larger.txt smaller.txt | bc | sort
