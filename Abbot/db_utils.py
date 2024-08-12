@@ -105,4 +105,5 @@ if __name__ == '__main__':
     # reset_db()
     # print(mark_and_select_from_samples("croc_trap_123"))
     # add_uuids_from_file("/home/avraham/MaruvkaLab/Texas/uuid_samples.txt")
-    reset_db()
+    # reset_db()
+    create_texas_table()

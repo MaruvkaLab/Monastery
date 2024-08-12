@@ -5,3 +5,4 @@ data/hg19_all_loci_sorted_new
 *.db
 data/
 Monk/token_01082024.txt
+*.log
