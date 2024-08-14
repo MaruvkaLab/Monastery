@@ -14,8 +14,8 @@ def download_process():
     logger.info("STARTED DOWNLOAD PROCESS")
     server_ip = "10.128.0.3"
     server_port = "8080"
-    gdc_token_fp = ""
-    gdc_client_path = ""
+    gdc_token_fp = "/home/avraham/Abbot/Monk/token_01082024.txt"
+    gdc_client_path = "/home/avraham/gdc-client"
     headers = {'accept': 'application/json'}
     mac_addr = str(get_mac())
     if not os.path.exists(gdc_token_fp) or not os.path.exists(gdc_client_path):
@@ -28,13 +28,14 @@ def download_process():
         req_json = sample_req.json()
         sample_id = req_json['sample_uuid']
         is_female = bool(req_json["is_female"])
-        dest_path = "" # fill in
+        dest_path = "/home/avraham/gdc_downloads/tmp" # fill in
         if is_female:
             # softlink
-            os.system(f"ln -s /home/avraham/female_loci {dest_path}")
+            os.system(f"ln -s /home/avraham/gdc_downloads/fake_female.txt {dest_path}")
         else:
-            os.system(f"ln -s /home/avraham/all_loci {dest_path}")
-        download_command = f"{gdc_client_path} download {sample_id} -t {gdc_token_fp}"
+            os.system(f"ln -s /home/avraham/gdc_downloads/fake.txt {dest_path}")
+        download_command = [f"{gdc_client_path}", "download", f"{sample_id}", "-t", f"{gdc_token_fp}", "-d", "/home/avraham/gdc_downloads"]
+        print(download_command)
         download_subprocess = subprocess.Popen(download_command)
         download_succeeded = wait_on_subprocess(download_subprocess)
         if download_succeeded:
@@ -49,4 +50,5 @@ def main():
     download_process()
 
 
-
+if __name__ == '__main__':
+    main()
