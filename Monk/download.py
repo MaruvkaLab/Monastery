@@ -9,8 +9,9 @@ def wait_on_subprocess(p: subprocess.Popen) -> bool:
 
 
 def download_process():
+    FORMAT = '%(asctime)s %(message)s'
     logger = logging.getLogger(__name__)
-    logging.basicConfig(filename='download.log', level=logging.INFO)
+    logging.basicConfig(filename='download.log', level=logging.INFO, format=FORMAT)
     logger.info("STARTED DOWNLOAD PROCESS")
     server_ip = "10.128.0.3"
     server_port = "8080"
