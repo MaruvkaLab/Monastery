@@ -41,7 +41,9 @@ def run_msmutect_on_sample(locus_file: str, bam_file: str):
     logger = logging.getLogger(__name__)
     logging.basicConfig(filename='msmutect.log', level=logging.INFO, format=FORMAT)
     msmutect_path = "/home/avraham/MSMuTect_0.5/msmutect.sh"
-    msmutect_run = os.system(f"{msmutect_path} -l {locus_file} -S {bam_file} -H -c 2")
+    samp_id = bam_file[len(os.path.dirname(bam_file))+1:-4]
+    results_path="/home/avraham/results"
+    msmutect_run = os.system(f"{msmutect_path} -l {locus_file} -S {bam_file} -H -c 2 -O {os.path.join(results_path, samp_id)}")
     if msmutect_run==0:
         shutil.rmtree(os.path.dirname(bam_file))
         logger.info(f"RAN {bam_file} succesfully")
@@ -51,6 +53,7 @@ def run_msmutect_on_sample(locus_file: str, bam_file: str):
 
 
 def msmutect_loop():
+    print("began msmutect loop")
     while True:
         new_bam = discover_new_bam("/home/avraham/gdc_downloads")
         if new_bam is None:

@@ -29,17 +29,18 @@ def download_process():
         req_json = sample_req.json()
         sample_id = req_json['sample_uuid']
         is_female = bool(req_json["is_female"])
-        dest_path = "/home/avraham/gdc_downloads/tmp" # fill in
-        if is_female:
-            # softlink
-            os.system(f"ln -s /home/avraham/gdc_downloads/fake_female.txt {dest_path}")
-        else:
-            os.system(f"ln -s /home/avraham/gdc_downloads/fake.txt {dest_path}")
+        dest_path = f"/home/avraham/gdc_downloads/{sample_id}" # fill in
         download_command = [f"{gdc_client_path}", "download", f"{sample_id}", "-t", f"{gdc_token_fp}", "-d", "/home/avraham/gdc_downloads"]
         print(download_command)
         download_subprocess = subprocess.Popen(download_command)
+        logger.info(f"STARTED DOWNLOADING {sample_id}")
         download_succeeded = wait_on_subprocess(download_subprocess)
         if download_succeeded:
+            if is_female:
+                # softlink
+                os.system(f"ln -s /home/avraham/gdc_downloads/female_loci.phobos {dest_path}")
+            else:
+                os.system(f"ln -s /home/avraham/gdc_downloads/all_loci.phobos {dest_path}")
             logger.info(f"DOWNLOAD {sample_id} succesfully")
         else:
             logger.error(f"FAILED DOWNLOAD {sample_id}")
