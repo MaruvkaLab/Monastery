@@ -1,4 +1,5 @@
 import os, shutil, subprocess, time, sys, requests, psutil, logging
+from typing import List
 from uuid import getnode as get_mac
 from dataclasses import dataclass
 
@@ -6,7 +7,11 @@ from dataclasses import dataclass
 @dataclass
 class SequenceCandidate:
     bam_file: str
+    bai_file: str
     locus_file: str
+
+    def sample_id(self):
+        return os.path.dirname(self.bam_file)[28:]  # len("/home/avraham/gdc_downloads/") = 28
 
 
 def immediate_child_dirs(fp: str):
@@ -32,38 +37,80 @@ def discover_new_bam(gdc_download_path: str) -> SequenceCandidate:
                 elif a.endswith(".phobos"):
                     phobos_file = os.path.join(child_dir_abs_path, a)
             if bam_file and bai_file: # if filled, they will not be False
-                return SequenceCandidate(bam_file=bam_file, locus_file=phobos_file)
+                return SequenceCandidate(bam_file=bam_file, locus_file=phobos_file, bai_file=bai_file)
         return None
 
+@dataclass
+class BashCommand:
+    command: str
+    err_messg: str
+    success_message: str = None
 
-def run_msmutect_on_sample(locus_file: str, bam_file: str):
+
+def run_bash_actions_sequentially(bash_actions: List[BashCommand]):
     FORMAT = '%(asctime)s %(message)s'
     logger = logging.getLogger(__name__)
     logging.basicConfig(filename='msmutect.log', level=logging.INFO, format=FORMAT)
+    for cmd in bash_actions:
+        ret = os.system(cmd.command)
+        if ret != 0:
+            logger.error(cmd.command + " failed with: " + cmd.err_messg)
+            exit()
+        else:
+            if cmd.success_message is not None:
+                logger.info(cmd.success_message)
+
+
+def run_msmutect_on_sample(new_sample: SequenceCandidate):
+    locus_file: str = new_sample.locus_file
+    bam_file: str = new_sample.bam_file
+    bai_file: str = new_sample.bai_file
     msmutect_path = "/home/avraham/MSMuTect_0.5/msmutect.sh"
-    samp_id = bam_file[len(os.path.dirname(bam_file))+1:-4]
     results_path="/home/avraham/results"
-    msmutect_run = os.system(f"{msmutect_path} -l {locus_file} -S {bam_file} -H -c 2 -O {os.path.join(results_path, samp_id)}")
-    if msmutect_run==0:
-        shutil.rmtree(os.path.dirname(bam_file))
-        logger.info(f"RAN {bam_file} succesfully")
-    else:
-        logger.error(f"FAILED RUN {bam_file}")
-        exit()
+    # somtimes index file is older than BAM file
+    os.system(f"touch {bai_file}")
+    output_prefix = os.path.join(results_path, new_sample.sample_id())
+    output_file = os.path.join(output_prefix+".hist.tsv")
+    print(f"{output_file} will be outputted")
+    msmutect_run = BashCommand(f"{msmutect_path} -l {locus_file} -S {bam_file} -H -c 2 -O {output_prefix}",
+                               f"failed msmutect run on {bam_file}",
+                               f"msmutect run on {bam_file} succeeded")
+    zip_run = BashCommand(f"zip -o -j {output_prefix}.zip {output_file}",
+                          "zipping failed")
+    copying = BashCommand(f"gsutil cp {output_prefix}.zip gs://texas_msmutect_run",
+                          "copying failed")
+    removing = BashCommand(f"rm -rf {os.path.dirname(bam_file)}",
+                           "removing old files failed")
+    remove_output_files = BashCommand(f"rm {output_file} {output_prefix}.zip",
+                                      "removing output files failed")
+    pipeline = [msmutect_run, zip_run, copying, removing, remove_output_files]
+    run_bash_actions_sequentially(pipeline)
+
+
+def mark_sample_complete(sample_id: str):
+    headers = {'accept': 'application/json'}
+    pa = {"sample_gdc_id": sample_id}
+    img_req = requests.get(url=f"http://10.128.0.3:8080/mark_sample_as_complete/", json=pa, headers=headers)
+    print(img_req.content)
 
 
 def msmutect_loop():
     print("began msmutect loop")
     while True:
-        new_bam = discover_new_bam("/home/avraham/gdc_downloads")
-        if new_bam is None:
+        new_sample = discover_new_bam("/home/avraham/gdc_downloads")
+        if new_sample is None:
             time.sleep(10)
             continue
         else:
-            print(f"running on {new_bam}")
-            run_msmutect_on_sample(new_bam.locus_file, new_bam.bam_file)
+            print(f"running on {new_sample}")
+            run_msmutect_on_sample(new_sample)
+            mark_sample_complete(new_sample.sample_id())
 
 
 if __name__ == '__main__':
+    # a=SequenceCandidate(bam_file='/home/avraham/gdc_downloads/eb8e28e6-e3ba-45dd-ac5a-a9046ca97e65/a29c569d-702a-4d6d-98cc-10a4f0361638_wgs_gdc_realn.bam',
+    #                     bai_file='/home/avraham/gdc_downloads/eb8e28e6-e3ba-45dd-ac5a-a9046ca97e65/a29c569d-702a-4d6d-98cc-10a4f0361638_wgs_gdc_realn.bai',
+    #                     locus_file='/home/avraham/gdc_downloads/eb8e28e6-e3ba-45dd-ac5a-a9046ca97e65/all_loci.phobos')
+    # print(a.sample_id())
     # print(discover_new_bam("/home/avraham/MaruvkaLab/Texas/tmp"))
     msmutect_loop()
