@@ -9,9 +9,9 @@ ip="127.0.0.1"
 
 def request_worker_node():
     mac = str(get_mac())
-    pa = {"worker_node_id": mac, "max_size": 200*10**9}
+    pa = {"worker_node_id": mac, "max_size": 1*10**9}
     img_req = requests.get(url=f"http://{ip}:8080/get_and_mark_sample/", json=pa, headers=headers)
-    print(img_req.content)
+    print(len(img_req.content.strip())==0)
 
 
 def mark_as_completed():
