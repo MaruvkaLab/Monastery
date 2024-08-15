@@ -1,7 +1,6 @@
 import os, shutil, subprocess, time, sys, requests, psutil, logging
 from uuid import getnode as get_mac
 
-
 def wait_on_subprocess(p: subprocess.Popen) -> bool:
     while p.poll() is None:
         time.sleep(2)
@@ -26,7 +25,11 @@ def download_process():
 
         pa = {"worker_node_id": mac_addr, "max_size": free_disk_space}
         sample_req = requests.get(url=f"http://{server_ip}:{server_port}/get_and_mark_sample/", json=pa, headers=headers)
-        req_json = sample_req.json()
+        if len(sample_req.content.strip()) == 0:
+            time.sleep(30)
+            continue
+        else:
+            req_json = sample_req.json()
         sample_id = req_json['sample_uuid']
         is_female = bool(req_json["is_female"])
         dest_path = f"/home/avraham/gdc_downloads/{sample_id}" # fill in

@@ -59,7 +59,7 @@ def mark_and_select_from_samples(worker_node_id: str, maximum_size: int):
         sample_uuid = variable[0]
         is_female = variable[1]
     except TypeError:  # all samples have been marked
-        return None
+        return None, None
     update_query = f"UPDATE samples SET status=1, worker_node=? WHERE sample_uuid=?"
     cursor.execute(update_query, (worker_node_id, sample_uuid))
     connection.commit()
