@@ -9,6 +9,10 @@ import subprocess, time, logging
 # print("croc trap")
 
 
+logger = logging.getLogger(__name__)
+logging.basicConfig(filename='download.log', level=logging.INFO)
+logger.info("STARTED")
+logger.error("croc trap")
 # def wait_on_subprocess(p: subprocess.Popen):
 #     while p.poll() is None:
 #         time.sleep(2)
