@@ -1,4 +1,4 @@
-import os, shutil, subprocess, time, sys, requests, psutil, logging
+import os, shutil, subprocess, time, sys, requests, logging
 from typing import List
 from uuid import getnode as get_mac
 from dataclasses import dataclass
@@ -36,7 +36,8 @@ def discover_new_bam(gdc_download_path: str) -> SequenceCandidate:
                     bai_file = os.path.join(child_dir_abs_path, a)
                 elif a.endswith(".phobos"):
                     phobos_file = os.path.join(child_dir_abs_path, a)
-            if bam_file and bai_file: # if filled, they will not be False
+            if bam_file and bai_file and phobos_file: # if filled, they will not be False
+                time.sleep(10) # to give everything time to complete
                 return SequenceCandidate(bam_file=bam_file, locus_file=phobos_file, bai_file=bai_file)
         return None
 
