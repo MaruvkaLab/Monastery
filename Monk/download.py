@@ -41,7 +41,7 @@ def download_process():
     if not os.path.exists(gdc_token_fp) or not os.path.exists(gdc_client_path):
         raise FileNotFoundError("GDC PATHS INVALID")
     while True:
-        free_disk_space = psutil.disk_usage('/').free-(50*(1e9))
+        free_disk_space = psutil.disk_usage('/').free-(12e9)
 
         pa = {"worker_node_id": mac_addr, "max_size": free_disk_space}
         sample_req = requests.get(url=f"http://{server_ip}:{server_port}/get_and_mark_sample/", json=pa, headers=headers)
