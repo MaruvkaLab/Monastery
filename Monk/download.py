@@ -59,13 +59,18 @@ def download_process():
             add_phobos_file(is_female, dest_path)
             logger.info(f"DOWNLOAD {sample_id} succesfully")
         else:
-            logger.error(f"FAILED DOWNLOAD {sample_id}. TRYING AGAIN")
-            download_succeeded = download_file(sample_id)
-            if download_succeeded:
-                add_phobos_file(is_female, dest_path)
-            else:
-                logger.error(f"FAILED DOWNLOAD {sample_id} FOR SECOND TIME. EXITING")
-                exit()
+            for i in range(10):
+                logger.error(f"FAILED DOWNLOAD {sample_id}. TRYING AGAIN")
+                download_succeeded = download_file(sample_id)
+                if download_succeeded:
+                    add_phobos_file(is_female, dest_path)
+                    break
+                else:
+                    time.sleep(30) # give time... idk
+
+            if not download_succeeded:
+                logger.error(f"FAILED DOWNLOAD {sample_id} FOR ELEVENTH TIME. EXITING")
+            exit()
         # handle failure
 
 
