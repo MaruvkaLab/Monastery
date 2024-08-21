@@ -1,4 +1,4 @@
-import os, shutil, subprocess, time, sys, requests, psutil, logging
+import os, shutil, subprocess, time, sys, requests, psutil, logging, glob
 from uuid import getnode as get_mac
 
 
@@ -11,7 +11,6 @@ def wait_on_subprocess(p: subprocess.Popen) -> bool:
 def download_file(sample_id: str) -> bool:
     gdc_token_fp = "/home/avraham/Abbot/Monk/token_01082024.txt"
     gdc_client_path = "/home/avraham/gdc-client"
-    dest_path = f"/home/avraham/gdc_downloads/{sample_id}"  # fill in
     download_command = [f"{gdc_client_path}", "download", f"{sample_id}", "-t", f"{gdc_token_fp}", "-d",
                         "/home/avraham/gdc_downloads"]
     download_subprocess = subprocess.Popen(download_command)
@@ -25,6 +24,14 @@ def add_phobos_file(is_female: bool, dest_path: str):
         os.system(f"ln -s /home/avraham/gdc_downloads/female_loci.phobos {dest_path}")
     else:
         os.system(f"ln -s /home/avraham/gdc_downloads/all_loci.phobos {dest_path}")
+
+
+def add_bai_file(dest_path: str):
+    if len(glob.glob(os.path.join(dest_path, "*.bai"))) > 0:
+        return
+    else:
+        bam_file = os.path.abspath(glob.glob(os.path.join(dest_path, "*.bam"))[0])
+        os.system(f"samtools index {bam_file}")
 
 
 def download_process():
@@ -56,6 +63,7 @@ def download_process():
         logger.info(f"STARTED DOWNLOADING {sample_id}")
         download_succeeded = download_file(sample_id)
         if download_succeeded:
+            add_bai_file(dest_path)
             add_phobos_file(is_female, dest_path)
             logger.info(f"DOWNLOAD {sample_id} succesfully")
         else:
@@ -63,14 +71,16 @@ def download_process():
                 logger.error(f"FAILED DOWNLOAD {sample_id}. TRYING AGAIN")
                 download_succeeded = download_file(sample_id)
                 if download_succeeded:
+                    add_bai_file(dest_path)
                     add_phobos_file(is_female, dest_path)
+                    logger.info(f"DOWNLOAD {sample_id} succesfully")
                     break
                 else:
                     time.sleep(30) # give time... idk
 
             if not download_succeeded:
                 logger.error(f"FAILED DOWNLOAD {sample_id} FOR ELEVENTH TIME. EXITING")
-            exit()
+                exit()
         # handle failure
 
 

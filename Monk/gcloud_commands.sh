@@ -3,7 +3,7 @@
 sudo journalctl -u google-startup-scripts.service
 
 
-gcloud compute instances list
+gcloud compute instances list --project "iucc-cancer-vaccine"
 
 gcloud compute ssh --zone "us-central1-a" "[name]" --project "quick-woodland-431215-n8" --command "wget https://arebirdsreal.com/"
 
