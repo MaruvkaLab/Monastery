@@ -15,7 +15,8 @@ def wait_on_subprocesses(p: List[subprocess.Popen]):
 def run_all_bash_files_asynchronously(all_bash_files: List[str]):
     all_subprocesses = []
     for f in all_bash_files:
-        run_analysis = ["bash", f"{f}"]
+        run_analysis = ["/usr/bin/time", "bash", f"{f}"]
+        print(run_analysis)
         download_subprocess = subprocess.Popen(run_analysis)
         all_subprocesses.append(download_subprocess)
     wait_on_subprocesses(all_subprocesses)
