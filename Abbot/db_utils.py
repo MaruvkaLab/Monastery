@@ -30,6 +30,7 @@ def create_texas_table():
     connection.close()
 
 
+
 @dataclass
 class Sample:
     uuid: str
@@ -72,6 +73,7 @@ def mark_and_select_from_samples(worker_node_id: str, maximum_size: int):
         return sample_uuid, is_female
     else:
         return mark_and_select_from_samples(worker_node_id, maximum_size)
+
 
 
 def reset_db():
