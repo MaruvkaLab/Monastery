@@ -36,7 +36,7 @@ def obtain_sample() -> Sample:
     else:
         current_samp = samples[0]
         tumor_dir = os.path.join(current_samp, "tumor")
-        normal_dir = os.path.join(current_samp, "tumor")
+        normal_dir = os.path.join(current_samp, "normal")
         tumor_fn = os.listdir(tumor_dir)[0]
         normal_fn = os.listdir(normal_dir)[0]
         return Sample(current_samp, tumor_dir, normal_dir, tumor_fn, normal_fn)
@@ -113,7 +113,7 @@ def run_mutect(patient: Sample, num_cpus: int, results_dir: str):
 
 def main():
     results_dir = "/home/avraham/results/"
-    strelka_results_dir = os.path.join(results_dir, "results")
+    strelka_results_dir = os.path.join(results_dir, "strelka")
     num_cpus = 8
     while True:
         sample = obtain_sample()

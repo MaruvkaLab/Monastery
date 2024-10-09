@@ -1,22 +1,30 @@
-import os, shutil, subprocess, time, sys, requests, psutil, logging, glob
+import os, shutil, subprocess, time, requests, psutil, logging, glob
+from typing import List
 from uuid import getnode as get_mac
 
 
-def wait_on_subprocess(p: subprocess.Popen) -> bool:
-    while p.poll() is None:
-        time.sleep(2)
-    return p.poll()==0
+def wait_on_subprocesses(ps: List[subprocess.Popen]) -> bool:
+    # returns if they both succeeded
+    ready=False
+    while not ready:
+        ready=True
+        for p in ps:
+            if p.poll() is None:
+                time.sleep(5)
+                ready=False
+    return sum([p.poll()==0 for p in ps])==len(ps) # all processes succeeded
 
 
-def download_file(sample_id: str) -> bool:
-    gdc_token_fp = "/home/avraham/Abbot/Monk/token_01082024.txt"
-    gdc_client_path = "/home/avraham/gdc-client"
-    download_command = [f"{gdc_client_path}", "download", f"{sample_id}", "-t", f"{gdc_token_fp}", "-d",
-                        "/home/avraham/gdc_downloads"]
-    download_subprocess = subprocess.Popen(download_command)
-    download_succeeded = wait_on_subprocess(download_subprocess)
-    return download_succeeded
 
+def download_files(tumor_gdc: str, normal_gdc: str, gdc_client_path: str, gdc_token_fp: str, dest_path: str) -> bool:
+    tumor_download_command = [f"{gdc_client_path}", "download", f"{tumor_gdc}", "-t", f"{gdc_token_fp}", "-d",
+                               dest_path]
+    normal_download_command = [f"{gdc_client_path}", "download", f"{normal_gdc}", "-t", f"{gdc_token_fp}", "-d",
+                        dest_path]
+    tumor_download_sub = subprocess.Popen(tumor_download_command)
+    normal_download_sub = subprocess.Popen(normal_download_command)
+    downloaded = wait_on_subprocesses([tumor_download_sub, normal_download_sub])
+    return downloaded
 
 def add_phobos_file(is_female: bool, dest_path: str):
     if is_female:
@@ -34,53 +42,92 @@ def add_bai_file(dest_path: str):
         os.system(f"samtools index {bam_file}")
 
 
+
+def original_bam_in_directory(directory: str):
+    all_f = os.listdir(directory)
+    all_bams = [b for b in all_f if b.endswith(".bam")]
+    all_split_names = [f'chr{i}.bam' for i in range(1, 23)]+["chrX.bam", "chrY.bam", "chrM.bam"]
+    for b in all_bams:
+        if b not in all_split_names:
+            return True
+    return False
+
+def parent_dir(pth: str):
+    if pth[-1]==os.path.sep:
+        return os.path.dirname(pth[:-1])
+    else:
+        return os.path.dirname(pth)
+
+def post_process_download_files(tumor_dir: str, normal_dir: str):
+    add_bai_file(tumor_dir)
+    add_bai_file(normal_dir)
+    shutil.move(tumor_dir, os.path.join(parent_dir(tumor_dir), "tumor"))
+    shutil.move(tumor_dir, os.path.join(parent_dir(normal_dir), "normal"))
+
+
 def download_process():
     FORMAT = '%(asctime)s %(message)s'
     logger = logging.getLogger(__name__)
     logging.basicConfig(filename='download.log', level=logging.INFO, format=FORMAT)
     logger.info("STARTED DOWNLOAD PROCESS")
-    server_ip = "10.128.0.3"
+    server_ip = "10.128.0.16"
     server_port = "8080"
-    gdc_token_fp = "/home/avraham/Abbot/Essene/gdc_token.txt"
+    gdc_token_fp = "/home/avraham/gdc_token.txt"
     gdc_client_path = "/home/avraham/gdc-client"
+    sample_dir = "/home/avraham/samples"
 
     headers = {'accept': 'application/json'}
     mac_addr = str(get_mac())
     if not os.path.exists(gdc_token_fp) or not os.path.exists(gdc_client_path):
         raise FileNotFoundError("GDC PATHS INVALID")
     while True:
-        free_disk_space = psutil.disk_usage('/').free-(12e9)
+        if len(os.listdir(sample_dir)) > 0: # already has files. check if we should continue
+            patient_dir = os.listdir(sample_dir)[0]
+            if original_bam_in_directory(os.path.join(sample_dir, patient_dir, "tumor")):
+                time.sleep(15)
+                continue # not ready to download
+
+        free_disk_space = psutil.disk_usage('/').free-(10e9)
 
         pa = {"worker_node_id": mac_addr, "max_size": free_disk_space}
         sample_req = requests.get(url=f"http://{server_ip}:{server_port}/get_and_mark_sample/", json=pa, headers=headers)
-        if len(sample_req.content.strip()) == 0:
-            time.sleep(30)
+
+        if len(sample_req.content.strip()) == 0: # no good file
+            time.sleep(30) # maybe the pipeline will finish and delete what remains
             continue
         else:
             req_json = sample_req.json()
-        sample_id = req_json['sample_uuid']
-        is_female = bool(req_json["is_female"])
-        dest_path = f"/home/avraham/gdc_downloads/{sample_id}" # fill in
-        logger.info(f"STARTED DOWNLOADING {sample_id}")
-        download_succeeded = download_file(sample_id)
+
+
+        patient_id = req_json['patient_id']
+        tumor_gdc = req_json["tumor_gdc_sample_id"]
+        normal_gdc = req_json["normal_gdc_sample_id"]
+
+        logger.info(f"STARTED DOWNLOADING {patient_id}")
+        current_patient_dir = os.path.join(sample_dir, patient_id)
+        os.mkdir(current_patient_dir)
+        tumor_dir = os.path.join(current_patient_dir, tumor_gdc)
+        normal_dir = os.path.join(current_patient_dir, normal_gdc)
+
+        download_succeeded = download_files(tumor_gdc, normal_gdc, gdc_client_path, gdc_token_fp, current_patient_dir)
+
         if download_succeeded:
-            add_bai_file(dest_path)
-            add_phobos_file(is_female, dest_path)
-            logger.info(f"DOWNLOAD {sample_id} succesfully")
+            post_process_download_files(tumor_dir, normal_dir)
+            logger.info(f"DOWNLOAD {patient_id} succesfully")
         else:
             for i in range(10):
-                logger.error(f"FAILED DOWNLOAD {sample_id}. TRYING AGAIN")
-                download_succeeded = download_file(sample_id)
+                logger.error(f"FAILED DOWNLOAD {patient_id}. TRYING AGAIN")
+                download_succeeded = download_files(tumor_gdc, normal_gdc, gdc_client_path, gdc_token_fp, current_patient_dir)
+
                 if download_succeeded:
-                    add_bai_file(dest_path)
-                    add_phobos_file(is_female, dest_path)
-                    logger.info(f"DOWNLOAD {sample_id} succesfully")
+                    post_process_download_files(tumor_dir, normal_dir)
+                    logger.info(f"DOWNLOAD {patient_id} succesfully")
                     break
                 else:
                     time.sleep(30) # give time... idk
 
             if not download_succeeded:
-                logger.error(f"FAILED DOWNLOAD {sample_id} FOR ELEVENTH TIME. EXITING")
+                logger.error(f"FAILED DOWNLOAD {patient_id} FOR ELEVENTH TIME. EXITING")
                 exit()
         # handle failure
 
