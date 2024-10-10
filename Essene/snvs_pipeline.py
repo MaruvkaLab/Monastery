@@ -19,7 +19,7 @@ class Sample:
 
     @property
     def normal_fp(self):
-        return os.path.join(self.tumor_dir, self.tumor_filename)
+        return os.path.join(self.normal_dir, self.normal_filename)
 
     @property
     def name(self):
@@ -30,16 +30,20 @@ def obtain_sample() -> Sample:
     """
     :return: sample info for current sample. None if none are available
     """
-    samples = os.listdir("/home/avraham/samples")
+    samps_dir = "/home/avraham/samples"
+    samples = os.listdir(samps_dir)
     if len(samples)==0:
         return None
     else:
         current_samp = samples[0]
-        tumor_dir = os.path.join(current_samp, "tumor")
-        normal_dir = os.path.join(current_samp, "normal")
-        tumor_fn = os.listdir(tumor_dir)[0]
-        normal_fn = os.listdir(normal_dir)[0]
-        return Sample(current_samp, tumor_dir, normal_dir, tumor_fn, normal_fn)
+        tumor_dir = os.path.join(samps_dir, current_samp, "tumor")
+        normal_dir = os.path.join(samps_dir, current_samp, "normal")
+        if os.path.exists(tumor_dir) and os.path.exists(normal_dir):
+            tumor_fn = [f for f in os.listdir(tumor_dir) if f.endswith('.bam')][0]
+            normal_fn = [f for f in os.listdir(normal_dir) if f.endswith('.bam')][0]
+            return Sample(current_samp, tumor_dir, normal_dir, tumor_fn, normal_fn)
+        else:
+            return None  # download is still in progress
 
 
 def run_strelka(patient: Sample, num_cpus: int, results_dir: str):
@@ -54,9 +58,8 @@ def run_strelka(patient: Sample, num_cpus: int, results_dir: str):
     --tumorBam {patient.tumor_fp} \
     --referenceFasta  /home/avraham/GRCh38.d1.vd1.fa \
     --callRegions /home/avraham/GRCh38_chromosomes.bed.bgzf \
-    --runDir /home/avraham/{results_dir}"
-
-    pipeline_run_step = f"python2 runWorkflow.py -m local -j {num_cpus}"
+    --runDir {results_dir}"
+    pipeline_run_step = f"python2 {os.path.join(results_dir, 'runWorkflow.py')} -m local -j {num_cpus}"
     subprocess.run(pipeline_config_step_cmd, check=True, shell=True)
 
     subprocess.run(pipeline_run_step, check=True, shell=True)
@@ -82,38 +85,55 @@ def run_as_pool(cmds: List[str], cores: int):
     else:
         failures = []
         for p in results:
-            if p.poll() != 1:
+            if p.poll() != 0:
                 stdout, stderr = p.communicate()
-                failures.append(f"stdout: {stdout}, stderr: {stderr}")
+                failures.append(f"stdout: {stdout.decode('ascii')}, stderr: {stderr.decode('ascii')}")
         failures_str = '\n'.join(failures)
         raise RuntimeError(f"{cmds} failed\n{num_failed_processes} failed\n{failures_str}")
 
 
-def split_commands(input_bam: str, results_dir: str) -> List[str]:
+def split_commands(input_bam: str, results_dir: str, split_cmd: bool) -> List[str]:
+    # either split (split_cmd=true) or index (split_cmd=false)
     cmds = []
     chrs = ["chr" + str(i) for i in range(1, 23)] + ["chrX", "chrY", "chrM"]
     for chrom in chrs:
         output_fp = os.path.join(results_dir, chrom+'.bam')
-        cmds.append(f"samtools view -b -h {chrom} {input_bam} -o {output_fp}")
-        cmds.append(f"samtools index {output_fp}")
+        if split_cmd:
+            cmds.append(f"samtools view -b -h {input_bam} {chrom} -o {output_fp}")
+        else:
+            cmds.append(f"samtools index {output_fp}")
     return cmds
 
+
+
 def split_bam_files(patient: Sample, num_cpus: int):
-    tumor_cmds = split_commands(patient.tumor_fp, patient.tumor_dir)
-    normal_cmds = split_commands(patient.normal_fp, patient.normal_dir)
-    for cmds in [normal_cmds, tumor_cmds]:
-        run_as_pool(cmds, num_cpus)
-    os.remove(patient.tumor_fp)
-    os.remove(patient.normal_fp)
+    tumor_split_cmds = split_commands(patient.tumor_fp, patient.tumor_dir, split_cmd=True)
+    normal_split_cmds = split_commands(patient.normal_fp, patient.normal_dir, split_cmd=True)
+    all_split_cmds = tumor_split_cmds+normal_split_cmds
+    run_as_pool(all_split_cmds, num_cpus)
+
+    tumor_index_cmds = split_commands(patient.tumor_fp, patient.tumor_dir, split_cmd=False)
+    normal_idx_cmds = split_commands(patient.normal_fp, patient.normal_dir, split_cmd=False)
+    all_idx_cmds = tumor_index_cmds + normal_idx_cmds
+    run_as_pool(all_idx_cmds, num_cpus)
+    # os.remove(patient.tumor_fp)
+    # os.remove(patient.normal_fp)
 
 
 def run_mutect(patient: Sample, num_cpus: int, results_dir: str):
-    pass
-
+    if not os.path.exists(results_dir):
+        os.mkdir(results_dir)
+    print("simulating 5 minute mutect run")
+    time.sleep(300)
+    fake_result_file = os.path.join(results_dir, "FAKE_MUTECT_RESULT.txt")
+    with open(fake_result_file, 'w+') as croc:
+        croc.write("croctrapcroctrap")
+    return
 
 def main():
     results_dir = "/home/avraham/results/"
     strelka_results_dir = os.path.join(results_dir, "strelka")
+    mutect_results_dir = os.path.join(results_dir, "mutect")
     num_cpus = 8
     while True:
         sample = obtain_sample()
@@ -122,11 +142,13 @@ def main():
             time.sleep(10)
             continue
         current_results_dir_strelka = os.path.join(strelka_results_dir, sample.name)
-        run_strelka(sample, num_cpus, results_dir)
-        split_bam_files(sample, num_cpus)
-        # run_mutect()
+        # run_strelka(sample, num_cpus, current_results_dir_strelka)
+        split_bam_files(sample, 20) # why not try more cpus
+        run_mutect(sample, num_cpus, os.path.join(mutect_results_dir, sample.name))
         # shutil.rmtree(sample.sample_dir) # remove files
+        return 0
 
 
 if __name__ == '__main__':
+    print(obtain_sample())
     main()

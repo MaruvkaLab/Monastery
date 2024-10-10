@@ -62,47 +62,48 @@ def mark_and_select_from_samples(worker_node_id: str, maximum_size: int) -> Tupl
         patient_id = variable[0]
         tumor_id = variable[1]
         normal_id = variable[2]
+        print(f"marked {patient_id}")
     except TypeError:  # all samples have been marked
         return None, None, None
-    update_query = f"UPDATE patients SET status=1, worker_node=? WHERE sample_uuid=?"
+    update_query = f"UPDATE patients SET status=1, worker_node=? WHERE PATIENT_ID=?"
     cursor.execute(update_query, (worker_node_id, patient_id))
     connection.commit()
 
-    confirmation_query = f"SELECT * FROM patients WHERE sample_uuid=? LIMIT 1"
+    confirmation_query = f"SELECT * FROM patients WHERE PATIENT_ID=? LIMIT 1"
     cursor.execute(confirmation_query, (patient_id, ))
     relevant_row = cursor.fetchone()
-    sample_uuid_worker_node = relevant_row[4]
+    sample_uuid_worker_node = relevant_row[5]
     if sample_uuid_worker_node == worker_node_id:
         return patient_id, tumor_id, normal_id
     else: # another server took it in the meanwhile
         return mark_and_select_from_samples(worker_node_id, maximum_size)
 
 
-def mark_and_select_from_snv_samples(worker_node_id: str, maximum_size: int) -> Tuple[str, str, str]:
-    # returns a sample name if there are any left
-    # otherwise returns None
-    connection, cursor = get_connection()
-    # Check if the user with the specified ID exists
-    check_query = "select * from patients where SIZE == (select MAX(SIZE) from patients where STATUS==0 and SIZE<?);"
-    cursor.execute(check_query, (maximum_size, ))
-    variable = cursor.fetchone()
-    try:
-        sample_uuid = variable[0]
-        is_female = variable[1]
-    except TypeError:  # all samples have been marked
-        return None, None
-    update_query = f"UPDATE patients SET status=1, worker_node=? WHERE sample_uuid=?"
-    cursor.execute(update_query, (worker_node_id, sample_uuid))
-    connection.commit()
-
-    confirmation_query = f"SELECT * FROM patients WHERE sample_uuid=? LIMIT 1"
-    cursor.execute(confirmation_query, (sample_uuid, ))
-    relevant_row = cursor.fetchone()
-    sample_uuid_worker_node = relevant_row[4]
-    if sample_uuid_worker_node == worker_node_id:
-        return sample_uuid, is_female
-    else:
-        return mark_and_select_from_snv_samples(worker_node_id, maximum_size)
+# def mark_and_select_from_snv_samples(worker_node_id: str, maximum_size: int) -> Tuple[str, str, str]:
+#     # returns a sample name if there are any left
+#     # otherwise returns None
+#     connection, cursor = get_connection()
+#     # Check if the user with the specified ID exists
+#     check_query = "select * from patients where SIZE == (select MAX(SIZE) from patients where STATUS==0 and SIZE<?);"
+#     cursor.execute(check_query, (maximum_size, ))
+#     variable = cursor.fetchone()
+#     try:
+#         sample_uuid = variable[0]
+#         is_female = variable[1]
+#     except TypeError:  # all samples have been marked
+#         return None, None
+#     update_query = f"UPDATE patients SET status=1, worker_node=? WHERE PATIENT_ID=?"
+#     cursor.execute(update_query, (worker_node_id, sample_uuid))
+#     connection.commit()
+#
+#     confirmation_query = f"SELECT * FROM patients WHERE PATIENT_ID=? LIMIT 1"
+#     cursor.execute(confirmation_query, (sample_uuid, ))
+#     relevant_row = cursor.fetchone()
+#     sample_uuid_worker_node = relevant_row[4]
+#     if sample_uuid_worker_node == worker_node_id:
+#         return sample_uuid, is_female
+#     else:
+#         return mark_and_select_from_snv_samples(worker_node_id, maximum_size)
 
 
 def reset_db():
@@ -116,7 +117,7 @@ def reset_db():
 
 
 def mark_sample_as_completed(gdc_id: str):
-    rachel_query = "UPDATE patients SET status=2 WHERE sample_uuid=?;"
+    rachel_query = "UPDATE patients SET status=2 WHERE PATIENT_ID=?;"
     connection, cursor = get_connection()
     cursor.execute(rachel_query, (gdc_id, ))
     connection.commit()

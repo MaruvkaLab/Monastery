@@ -1,13 +1,13 @@
 import json
 from flask import Flask, make_response, send_file, request
-from Abbot.db_utils import get_db_path, mark_and_select_from_samples, mark_sample_as_completed
+from Abbot.scroll_db_utils import get_db_path, mark_and_select_from_samples, mark_sample_as_completed
 
 app = Flask(__name__)
 
 
 @app.route('/', methods=['GET', 'POST'])
 def ar():
-    return make_response("Connected to Abbot Server", 200)
+    return make_response("Connected to Scroll Server", 200)
 
 
 @app.route('/get_and_mark_sample/', methods=['GET', 'POST'])

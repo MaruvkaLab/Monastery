@@ -12,6 +12,9 @@ def wait_on_subprocesses(ps: List[subprocess.Popen]) -> bool:
             if p.poll() is None:
                 time.sleep(5)
                 ready=False
+
+    print(ps[0].poll())
+    print(ps[1].poll())
     return sum([p.poll()==0 for p in ps])==len(ps) # all processes succeeded
 
 
@@ -25,13 +28,6 @@ def download_files(tumor_gdc: str, normal_gdc: str, gdc_client_path: str, gdc_to
     normal_download_sub = subprocess.Popen(normal_download_command)
     downloaded = wait_on_subprocesses([tumor_download_sub, normal_download_sub])
     return downloaded
-
-def add_phobos_file(is_female: bool, dest_path: str):
-    if is_female:
-        # softlink
-        os.system(f"ln -s /home/avraham/gdc_downloads/female_loci.phobos {dest_path}")
-    else:
-        os.system(f"ln -s /home/avraham/gdc_downloads/all_loci.phobos {dest_path}")
 
 
 def add_bai_file(dest_path: str):
@@ -62,7 +58,7 @@ def post_process_download_files(tumor_dir: str, normal_dir: str):
     add_bai_file(tumor_dir)
     add_bai_file(normal_dir)
     shutil.move(tumor_dir, os.path.join(parent_dir(tumor_dir), "tumor"))
-    shutil.move(tumor_dir, os.path.join(parent_dir(normal_dir), "normal"))
+    shutil.move(normal_dir, os.path.join(parent_dir(normal_dir), "normal"))
 
 
 def download_process():
@@ -80,25 +76,28 @@ def download_process():
     mac_addr = str(get_mac())
     if not os.path.exists(gdc_token_fp) or not os.path.exists(gdc_client_path):
         raise FileNotFoundError("GDC PATHS INVALID")
+
+    free_disk_space = shutil.disk_usage("/").total//2 - 10e9 # anything must be under half the space on the disk
     while True:
         if len(os.listdir(sample_dir)) > 0: # already has files. check if we should continue
             patient_dir = os.listdir(sample_dir)[0]
             if original_bam_in_directory(os.path.join(sample_dir, patient_dir, "tumor")):
+                print("waiting: old bam still there ")
                 time.sleep(15)
                 continue # not ready to download
 
-        free_disk_space = psutil.disk_usage('/').free-(10e9)
 
         pa = {"worker_node_id": mac_addr, "max_size": free_disk_space}
         sample_req = requests.get(url=f"http://{server_ip}:{server_port}/get_and_mark_sample/", json=pa, headers=headers)
-
+        print(sample_req.content.strip())
+        print(free_disk_space)
         if len(sample_req.content.strip()) == 0: # no good file
             time.sleep(30) # maybe the pipeline will finish and delete what remains
             continue
         else:
             req_json = sample_req.json()
 
-
+        print(req_json)
         patient_id = req_json['patient_id']
         tumor_gdc = req_json["tumor_gdc_sample_id"]
         normal_gdc = req_json["normal_gdc_sample_id"]
