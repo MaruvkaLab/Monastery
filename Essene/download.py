@@ -81,12 +81,13 @@ def download_process():
     while True:
         if len(os.listdir(sample_dir)) > 0: # already has files. check if we should continue
             patient_dir = os.listdir(sample_dir)[0]
-            if original_bam_in_directory(os.path.join(sample_dir, patient_dir, "tumor")):
+            # if original_bam_in_directory(os.path.join(sample_dir, patient_dir, "tumor")):
+            if os.path.exists(os.path.join(sample_dir, patient_dir, "tumor")):
                 print("waiting: old bam still there ")
                 time.sleep(15)
                 continue # not ready to download
 
-
+        free_disk_space = shutil.disk_usage("/").total - 10e9  # anything must be under half the space on the disk
         pa = {"worker_node_id": mac_addr, "max_size": free_disk_space}
         sample_req = requests.get(url=f"http://{server_ip}:{server_port}/get_and_mark_sample/", json=pa, headers=headers)
         print(sample_req.content.strip())

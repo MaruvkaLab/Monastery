@@ -55,8 +55,8 @@ def run_strelka(patient: Sample, num_cpus: int, results_dir: str, slimeball_dir:
     pipeline_config_step_cmd = f"python2 {slimeball_dir}/tools/strelka-2.9.10.centos6_x86_64/bin/configureStrelkaSomaticWorkflow.py \
     --normalBam {patient.normal_fp} \
     --tumorBam {patient.tumor_fp} \
-    --referenceFasta  /home/avraham/GRCh38.d1.vd1.fa \
-    --callRegions /home/avraham/GRCh38_chromosomes.bed.bgzf \
+    --referenceFasta  {slimeball_dir}/data/GRCh38.d1.vd1.fa \
+    --callRegions {slimeball_dir}/GRCh38_chromosomes.bed.bgzf \
     --runDir {results_dir}"
     pipeline_run_step = f"python2 {os.path.join(results_dir, 'runWorkflow.py')} -m local -j {num_cpus}"
     subprocess.run(pipeline_config_step_cmd, check=True, shell=True)
@@ -65,6 +65,10 @@ def run_strelka(patient: Sample, num_cpus: int, results_dir: str, slimeball_dir:
 
 
 def run_as_pool(cmds: List[str], cores: int):
+    for c in cmds:
+        print(c)
+    print("****************************")
+    return
     results = []
     cmds = [command.split(" ") for command in cmds]
     for command in cmds:
@@ -125,22 +129,16 @@ def split_bam_files(patient: Sample, num_cpus: int):
     # os.remove(patient.normal_fp)
 
 
-def run_mutect(patient: Sample, num_cpus: int, results_dir: str):
-    if not os.path.exists(results_dir):
-        os.mkdir(results_dir)
-    print("simulating 5 minute mutect run")
-    time.sleep(300)
-    fake_result_file = os.path.join(results_dir, "FAKE_MUTECT_RESULT.txt")
-    with open(fake_result_file, 'w+') as croc:
-        croc.write("croctrapcroctrap")
-    return
+def run_per_contig_pipeline(sample: Sample, num_cpus: int, results_dir: str, slimeball_dir: str):
+    current_dir = os.path.dirname(__file__)
+    contig_script = os.path.join(current_dir, "run_on_contig.sh")
+    cmds = [f"bash {contig_script} {chrom} {results_dir} {sample.name} {slimeball_dir}" for chrom in chrom_names()]
+    run_as_pool(cmds, num_cpus)
 
 
 def main(results_dir, samps_dir, slimeball):
     if slimeball[-1]==os.path.sep:
         slimeball=slimeball[:-1]
-    strelka_results_dir = os.path.join(results_dir, "strelka")
-    mutect_results_dir = os.path.join(results_dir, "mutect")
     num_cpus = 8
     while True:
         sample = obtain_sample(samps_dir)
@@ -148,14 +146,18 @@ def main(results_dir, samps_dir, slimeball):
             print("waiting for sample")
             time.sleep(10)
             continue
-        current_results_dir_strelka = os.path.join(strelka_results_dir, sample.name)
-        run_strelka(sample, num_cpus, current_results_dir_strelka, slimeball_dir=slimeball)
-        split_bam_files(sample, 20) # why not try more cpus
-        run_mutect(sample, num_cpus, os.path.join(mutect_results_dir, sample.name))
-        # shutil.rmtree(sample.sample_dir) # remove files
+        current_results_dir= os.path.join(results_dir, sample.name)
+        # run_strelka(sample, num_cpus, current_results_dir_strelka, slimeball_dir=slimeball)
+        # split_bam_files(sample, 20) # why not try more cpus
+        # shutil.rmtree(sample.sample_dir) # remove files, so download of next files can begin
+        run_per_contig_pipeline(sample, num_cpus, current_results_dir, slimeball_dir=slimeball)
+        # delete bam files
+        # save results
         return 0
 
 
 if __name__ == '__main__':
-    print(obtain_sample())
-    main("/home/avraham/results/", "/home/avraham/samples", "/home/avraham/MaruvkaLab/Texas/SNVs/slimeball/")
+    # print(obtain_sample())
+    # main("/home/avraham/results/", "/home/avraham/samples", "/home/avraham/MaruvkaLab/Texas/SNVs/slimeball/")
+    main("/home/avraham/MaruvkaLab/Texas/SNVs/fake_res", "/home/avraham/MaruvkaLab/Texas/gdc/croc_trap/",
+         "/home/avraham/MaruvkaLab/Texas/SNVs/slimeball")
