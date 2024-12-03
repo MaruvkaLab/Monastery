@@ -26,11 +26,10 @@ class Sample:
         return os.path.basename(self.sample_dir)
 
 
-def obtain_sample() -> Sample:
+def obtain_sample(samps_dir) -> Sample:
     """
     :return: sample info for current sample. None if none are available
     """
-    samps_dir = "/home/avraham/samples"
     samples = os.listdir(samps_dir)
     if len(samples)==0:
         return None
@@ -46,14 +45,14 @@ def obtain_sample() -> Sample:
             return None  # download is still in progress
 
 
-def run_strelka(patient: Sample, num_cpus: int, results_dir: str):
+def run_strelka(patient: Sample, num_cpus: int, results_dir: str, slimeball_dir: str):
     """
     :param patient: sample to run on
     :param num_cpus: number of cpus to run strelka on
     :param results_dir: output directory
     :return: None
     """
-    pipeline_config_step_cmd = f"python2 /home/avraham/strelka/strelka-2.9.10.centos6_x86_64/bin/configureStrelkaSomaticWorkflow.py \
+    pipeline_config_step_cmd = f"python2 {slimeball_dir}/tools/strelka-2.9.10.centos6_x86_64/bin/configureStrelkaSomaticWorkflow.py \
     --normalBam {patient.normal_fp} \
     --tumorBam {patient.tumor_fp} \
     --referenceFasta  /home/avraham/GRCh38.d1.vd1.fa \
@@ -61,7 +60,6 @@ def run_strelka(patient: Sample, num_cpus: int, results_dir: str):
     --runDir {results_dir}"
     pipeline_run_step = f"python2 {os.path.join(results_dir, 'runWorkflow.py')} -m local -j {num_cpus}"
     subprocess.run(pipeline_config_step_cmd, check=True, shell=True)
-
     subprocess.run(pipeline_run_step, check=True, shell=True)
 
 
@@ -91,15 +89,22 @@ def run_as_pool(cmds: List[str], cores: int):
         failures_str = '\n'.join(failures)
         raise RuntimeError(f"{cmds} failed\n{num_failed_processes} failed\n{failures_str}")
 
+def chrom_names():
+    return ["chr" + str(i) for i in range(1, 23)] + ["chrX", "chrY", "chrM"]
 
-def split_commands(input_bam: str, results_dir: str, split_cmd: bool) -> List[str]:
+
+def split_commands(input_bam: str, results_dir: str, split_cmd: bool, tumor: bool) -> List[str]:
     # either split (split_cmd=true) or index (split_cmd=false)
     cmds = []
-    chrs = ["chr" + str(i) for i in range(1, 23)] + ["chrX", "chrY", "chrM"]
+    if tumor:
+        additional_specification = "tumor"
+    else:
+        additional_specification = "normal"
+    chrs = chrom_names()
     for chrom in chrs:
-        output_fp = os.path.join(results_dir, chrom+'.bam')
+        output_fp = os.path.join(results_dir, chrom+f'{additional_specification}_.bam')
         if split_cmd:
-            cmds.append(f"samtools view -b -h {input_bam} {chrom} -o {output_fp}")
+            cmds.append(f"samtools view -b -h -F 1024 {input_bam} {chrom} -o {output_fp}")
         else:
             cmds.append(f"samtools index {output_fp}")
     return cmds
@@ -130,19 +135,21 @@ def run_mutect(patient: Sample, num_cpus: int, results_dir: str):
         croc.write("croctrapcroctrap")
     return
 
-def main():
-    results_dir = "/home/avraham/results/"
+
+def main(results_dir, samps_dir, slimeball):
+    if slimeball[-1]==os.path.sep:
+        slimeball=slimeball[:-1]
     strelka_results_dir = os.path.join(results_dir, "strelka")
     mutect_results_dir = os.path.join(results_dir, "mutect")
     num_cpus = 8
     while True:
-        sample = obtain_sample()
+        sample = obtain_sample(samps_dir)
         if sample is None:
             print("waiting for sample")
             time.sleep(10)
             continue
         current_results_dir_strelka = os.path.join(strelka_results_dir, sample.name)
-        # run_strelka(sample, num_cpus, current_results_dir_strelka)
+        run_strelka(sample, num_cpus, current_results_dir_strelka, slimeball_dir=slimeball)
         split_bam_files(sample, 20) # why not try more cpus
         run_mutect(sample, num_cpus, os.path.join(mutect_results_dir, sample.name))
         # shutil.rmtree(sample.sample_dir) # remove files
@@ -151,4 +158,4 @@ def main():
 
 if __name__ == '__main__':
     print(obtain_sample())
-    main()
+    main("/home/avraham/results/", "/home/avraham/samples", "/home/avraham/MaruvkaLab/Texas/SNVs/slimeball/")
