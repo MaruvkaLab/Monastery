@@ -18,13 +18,14 @@ export NAME=${3}
 # 4 = slimeball dir
 export SLIMEBALL=${4}
 
+export SAMPLE_DIR=${5}
 
-export NORMAL_CONTIG_BAM=$RESULTS_DIRECTORY/$NAME\_$CHROM\_normal.bam
-export TUMOR_CONTIG_BAM=$RESULTS_DIRECTORY/$NAME\_$CHROM\_tumor.bam
 
-export JAVA_7=$SLIMEBALL/java-se-7u75-ri/bin/java
-export JAVA_8=$SLIMEBALL/openlogic-openjdk-8u432-b06-linux-x64/bin/java
+export NORMAL_CONTIG_BAM=$SAMPLE_DIR/normal/$CHROM\_normal.bam
+export TUMOR_CONTIG_BAM=$SAMPLE_DIR/tumor/$CHROM\_tumor.bam
 
+export JAVA_7=$SLIMEBALL/path/java-se-7u75-ri/
+export JAVA_8=$SLIMEBALL/path/openlogic-openjdk-8u432-b06-linux-x64/bin/java
 
 
 echo $NAME
@@ -39,51 +40,55 @@ echo $NAME
 
 
 # ContEst
-$JAVA_8 -jar $SLIMEBALL/tools/gatk-3.8/GenomeAnalysisTK.jar \
--T ContEst \
--I:eval $TUMOR_CONTIG_BAM \
--I:genotype $NORMAL_CONTIG_BAM \
--L $SLIMEBALL/data/broad_custom_exome_v1_filt.Homo_sapiens_assembly38.targets.interval_list \
--L $SLIMEBALL/data/snp6_filt.na35.remap.hg38.subset_fixed.interval_list \
--isr INTERSECTION \
--R $SLIMEBALL/data/GRCh38.d1.vd1.fa \
--l INFO \
--pf $SLIMEBALL/data/hg38_population_stratified_af_hapmap_3.3.fixed6.vcf \
--o $RESULTS_DIRECTORY/"${NAME}"_contamination.af.txt \
---trim_fraction 0.03 \
---beta_threshold 0.05 \
--br $RESULTS_DIRECTORY/"${NAME}"_contamination.base_report.txt \
--mbc 100 \
---min_genotype_depth 30 \
---min_genotype_ratio 0.8
-
-
+#/usr/bin/time $JAVA_8 -jar $SLIMEBALL/tools/gatk-3.8/GenomeAnalysisTK.jar \
+#-T ContEst \
+#-I:eval $TUMOR_CONTIG_BAM \
+#-I:genotype $NORMAL_CONTIG_BAM \
+#-L $SLIMEBALL/data/broad_custom_exome_v1_filt.Homo_sapiens_assembly38.targets.interval_list \
+#-L $SLIMEBALL/data/snp6_filt.na35.remap.hg38.subset_fixed.interval_list \
+#-isr INTERSECTION \
+#-R $SLIMEBALL/data/GRCh38.d1.vd1.fa \
+#-l INFO \
+#-pf $SLIMEBALL/data/hg38_population_stratified_af_hapmap_3.3.fixed6.vcf \
+#-o $RESULTS_DIRECTORY/"${CHROM}"_contamination.af.txt \
+#--trim_fraction 0.03 \
+#--beta_threshold 0.05 \
+#-br $RESULTS_DIRECTORY/"${CHROM}"_contamination.base_report.txt \
+#-mbc 100 \
+#--min_genotype_depth 30 \
+#--min_genotype_ratio 0.8 &> contest_"${CHROM}.out"
+#
+#
 #Normal
-$JAVA_8 -jar $SLIMEBALL/tools/picard/picard.jar CollectGcBiasMetrics \
+/usr/bin/time $JAVA_8 -jar $SLIMEBALL/tools/picard/picard.jar CollectGcBiasMetrics \
 I=$NORMAL_CONTIG_BAM \
-O=$RESULTS_DIRECTORY/"${NAME}"_normal_gc_bias_metrics.txt \
-CHART=$RESULTS_DIRECTORY/"${NAME}"_normal_gc_bias_metrics.pdf \
-S=$RESULTS_DIRECTORY/"${NAME}"_normal_summary_metrics.txt \
-R=$SLIMEBALL/data/GRCh38.d1.vd1.fa
+O=$RESULTS_DIRECTORY/"${CHROM}"_normal_gc_bias_metrics.txt \
+CHART=$RESULTS_DIRECTORY/"${CHROM}"_normal_gc_bias_metrics.pdf \
+S=$RESULTS_DIRECTORY/"${CHROM}"_normal_summary_metrics.txt \
+R=$SLIMEBALL/data/GRCh38.d1.vd1.fa &> "${CHROM}"_gcbiasnormal.out
 
 
 #CollectGcBiasMetrics
 #Tumor
-$JAVA_8 -jar $SLIMEBALL/tools/picard/picard.jar CollectGcBiasMetrics \
+/usr/bin/time $JAVA_8 -jar $SLIMEBALL/tools/picard/picard.jar CollectGcBiasMetrics \
 I=$TUMOR_CONTIG_BAM \
-O=$RESULTS_DIRECTORY/"${NAME}"_tumor_gc_bias_metrics.txt \
-CHART=$RESULTS_DIRECTORY/"${NAME}"_tumor_gc_bias_metrics.pdf \
-S=$RESULTS_DIRECTORY/"${NAME}"_tumor_summary_metrics.txt \
-R=$SLIMEBALL/data/GRCh38.d1.vd1.fa
+O=$RESULTS_DIRECTORY/"${CHROM}"_tumor_gc_bias_metrics.txt \
+CHART=$RESULTS_DIRECTORY/"${CHROM}"_tumor_gc_bias_metrics.pdf \
+S=$RESULTS_DIRECTORY/"${CHROM}"_tumor_summary_metrics.txt \
+R=$SLIMEBALL/data/GRCh38.d1.vd1.fa &> "${CHROM}"_gcbiastumor.out
 
 
 
 
 #Extracting the contamination fraction from the ContEst output
-cont=$(awk 'BEGIN{FS="\t"}{if(FNR==2) {print $4/100}}' $RESULTS_DIRECTORY/"${NAME}"_contamination.af.txt)
+#cont=$(awk 'BEGIN{FS="\t"}{if(FNR==2) {print $4/100}}' $RESULTS_DIRECTORY/"${CHROM}"_contamination.af.txt)
 #cont="croc"
+export cont=$(python3 read_contest.py $RESULTS_DIRECTORY)
+echo $cont
 
-$JAVA_7 -jar $SLIMEBALL/tools/mutect/bin/mutect.jar \
+
+export JAVA_HOME=$JAVA_7
+/usr/bin/time $SLIMEBALL/tools/mutect/bin/mutect \
 --analysis_type MuTect \
 --reference_sequence $SLIMEBALL/data/GRCh38.d1.vd1.fa \
 --input_file:normal $NORMAL_CONTIG_BAM \
@@ -91,5 +96,5 @@ $JAVA_7 -jar $SLIMEBALL/tools/mutect/bin/mutect.jar \
 --fraction_contamination "${cont}" \
 --dbsnp $SLIMEBALL/data/common_all_20180418.vcf \
 --cosmic $SLIMEBALL/data/CosmicCodingMuts_v89_fixed.vcf \
---out $RESULTS_DIRECTORY/"${NAME}".call_stats.txt \
---vcf $RESULTS_DIRECTORY/"${NAME}".Mutect1.vcf
+--out $RESULTS_DIRECTORY/"${NAME}"\_$CHROM.call_stats.txt &> $CHROM.out #\
+#--vcf $RESULTS_DIRECTORY/"${NAME}"\_$CHROM.Mutect1.vcf > $CHROM.out

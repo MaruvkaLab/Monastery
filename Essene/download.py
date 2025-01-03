@@ -1,4 +1,4 @@
-import os, shutil, subprocess, time, requests, psutil, logging, glob
+import os, shutil, subprocess, time, requests, logging, glob
 from typing import List
 from uuid import getnode as get_mac
 
@@ -77,7 +77,7 @@ def download_process():
     if not os.path.exists(gdc_token_fp) or not os.path.exists(gdc_client_path):
         raise FileNotFoundError("GDC PATHS INVALID")
 
-    free_disk_space = shutil.disk_usage("/").total//2 - 10e9 # anything must be under half the space on the disk
+    maximal_size = shutil.disk_usage("/").total//2 - 10e9 # anything must be under half the space on the disk
     while True:
         if len(os.listdir(sample_dir)) > 0: # already has files. check if we should continue
             patient_dir = os.listdir(sample_dir)[0]
@@ -87,7 +87,8 @@ def download_process():
                 time.sleep(15)
                 continue # not ready to download
 
-        free_disk_space = shutil.disk_usage("/").total - 10e9  # anything must be under half the space on the disk
+        free_disk_space = min(shutil.disk_usage("/").total - 10e9, maximal_size)  # anything must be under half the space on the disk
+
         pa = {"worker_node_id": mac_addr, "max_size": free_disk_space}
         sample_req = requests.get(url=f"http://{server_ip}:{server_port}/get_and_mark_sample/", json=pa, headers=headers)
         print(sample_req.content.strip())
