@@ -60,30 +60,37 @@ echo $NAME
 #
 #
 #Normal
-/usr/bin/time $JAVA_8 -jar $SLIMEBALL/tools/picard/picard.jar CollectGcBiasMetrics \
-I=$NORMAL_CONTIG_BAM \
-O=$RESULTS_DIRECTORY/"${CHROM}"_normal_gc_bias_metrics.txt \
-CHART=$RESULTS_DIRECTORY/"${CHROM}"_normal_gc_bias_metrics.pdf \
-S=$RESULTS_DIRECTORY/"${CHROM}"_normal_summary_metrics.txt \
-R=$SLIMEBALL/data/GRCh38.d1.vd1.fa &> "${CHROM}"_gcbiasnormal.out
+#/usr/bin/time $JAVA_8 -jar $SLIMEBALL/tools/picard/picard.jar CollectGcBiasMetrics \
+#I=$NORMAL_CONTIG_BAM \
+#O=$RESULTS_DIRECTORY/"${CHROM}"_normal_gc_bias_metrics.txt \
+#CHART=$RESULTS_DIRECTORY/"${CHROM}"_normal_gc_bias_metrics.pdf \
+#S=$RESULTS_DIRECTORY/"${CHROM}"_normal_summary_metrics.txt \
+#R=$SLIMEBALL/data/GRCh38.d1.vd1.fa &> "${CHROM}"_gcbiasnormal.out
 
-
+#
 #CollectGcBiasMetrics
 #Tumor
-/usr/bin/time $JAVA_8 -jar $SLIMEBALL/tools/picard/picard.jar CollectGcBiasMetrics \
-I=$TUMOR_CONTIG_BAM \
-O=$RESULTS_DIRECTORY/"${CHROM}"_tumor_gc_bias_metrics.txt \
-CHART=$RESULTS_DIRECTORY/"${CHROM}"_tumor_gc_bias_metrics.pdf \
-S=$RESULTS_DIRECTORY/"${CHROM}"_tumor_summary_metrics.txt \
-R=$SLIMEBALL/data/GRCh38.d1.vd1.fa &> "${CHROM}"_gcbiastumor.out
+#/usr/bin/time $JAVA_8 -jar $SLIMEBALL/tools/picard/picard.jar CollectGcBiasMetrics \
+#I=$TUMOR_CONTIG_BAM \
+#O=$RESULTS_DIRECTORY/"${CHROM}"_tumor_gc_bias_metrics.txt \
+#CHART=$RESULTS_DIRECTORY/"${CHROM}"_tumor_gc_bias_metrics.pdf \
+#S=$RESULTS_DIRECTORY/"${CHROM}"_tumor_summary_metrics.txt \
+#R=$SLIMEBALL/data/GRCh38.d1.vd1.fa &> "${CHROM}"_gcbiastumor.out
 
+#/usr/bin/time $JAVA_8 -jar $SLIMEBALL/tools/picard/picard.jar CollectWgsMetrics \
+#      I=$TUMOR_CONTIG_BAM \
+#      O=$RESULTS_DIRECTORY/"${CHROM}"_wgs_tumor_metrics.txt \
+#      R=$SLIMEBALL/data/GRCh38.d1.vd1.fa &> "${CHROM}"_wgs_tumor_metrics.out
 
-
+#/usr/bin/time $JAVA_8 -jar $SLIMEBALL/tools/picard/picard.jar CollectWgsMetrics \
+#      I=$NORMAL_CONTIG_BAM \
+#      O=$RESULTS_DIRECTORY/"${CHROM}"_wgs_normal_metrics.txt \
+#      R=$SLIMEBALL/data/GRCh38.d1.vd1.fa &> "${CHROM}"_wgs_normal_metrics.out
 
 #Extracting the contamination fraction from the ContEst output
 #cont=$(awk 'BEGIN{FS="\t"}{if(FNR==2) {print $4/100}}' $RESULTS_DIRECTORY/"${CHROM}"_contamination.af.txt)
 #cont="croc"
-export cont=$(python3 read_contest.py $RESULTS_DIRECTORY)
+export cont=$(python3 /home/avraham/Monastery/Essene/read_contest.py $RESULTS_DIRECTORY)
 echo $cont
 
 

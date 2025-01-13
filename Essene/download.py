@@ -60,16 +60,25 @@ def post_process_download_files(tumor_dir: str, normal_dir: str):
     shutil.move(tumor_dir, os.path.join(parent_dir(tumor_dir), "tumor"))
     shutil.move(normal_dir, os.path.join(parent_dir(normal_dir), "normal"))
 
+def original_bam_in_sample_dir(sample_dir):
+    try:
+        for f in os.listdir(sample_dir):
+            if f.endswith('.bam') and 'tumor' not in f.lower():
+                return True
+        return False
+    except:
+        return True
+
 
 def download_process():
     FORMAT = '%(asctime)s %(message)s'
     logger = logging.getLogger(__name__)
     logging.basicConfig(filename='download.log', level=logging.INFO, format=FORMAT)
     logger.info("STARTED DOWNLOAD PROCESS")
-    server_ip = "10.128.0.16"
+    server_ip = "10.128.0.20"
     server_port = "8080"
     gdc_token_fp = "/home/avraham/gdc_token.txt"
-    gdc_client_path = "/home/avraham/gdc-client"
+    gdc_client_path = "/home/avraham/slimeball/tools/gdc-client"
     sample_dir = "/home/avraham/samples"
 
     headers = {'accept': 'application/json'}
@@ -80,12 +89,13 @@ def download_process():
     maximal_size = shutil.disk_usage("/").total//2 - 10e9 # anything must be under half the space on the disk
     while True:
         if len(os.listdir(sample_dir)) > 0: # already has files. check if we should continue
-            patient_dir = os.listdir(sample_dir)[0]
-            # if original_bam_in_directory(os.path.join(sample_dir, patient_dir, "tumor")):
-            if os.path.exists(os.path.join(sample_dir, patient_dir, "tumor")):
-                print("waiting: old bam still there ")
-                time.sleep(15)
-                continue # not ready to download
+            for patient_dir in os.listdir(sample_dir):
+            # patient_dir = os.listdir(sample_dir)[0]
+            # if original_bam_in_directory(os.path.join(sample_dir, patient_dir, "tumor"))
+            # os.path.join(sample_dir, patient_dir, "tumor"):
+                while original_bam_in_sample_dir(os.path.join(sample_dir, patient_dir, "tumor")):
+                    print("waiting: old bam still there ")
+                    time.sleep(15)
 
         free_disk_space = min(shutil.disk_usage("/").total - 10e9, maximal_size)  # anything must be under half the space on the disk
 

@@ -173,7 +173,7 @@ def run_msmutect(slimeball:str, tumor_file: str, normal_file: str, num_cpus: int
 def main(results_dir, samps_dir, slimeball):
     if slimeball[-1]==os.path.sep:
         slimeball=slimeball[:-1]
-    num_cpus = 12
+    num_cpus = 16
     while True:
         sample = obtain_sample(samps_dir)
         # sample = Sample("/home/avraham/samples/TCGA-AD-6548",
@@ -195,27 +195,27 @@ def main(results_dir, samps_dir, slimeball):
         if not os.path.exists(current_results_dir):
             os.mkdir(current_results_dir)
 
+        st=time.time()
+        run_msmutect(slimeball, sample.tumor_fp, sample.normal_fp, num_cpus, current_results_dir)
+        print(f"MSMuTect ran in {time.time() - st}")
+        #
+        # st = time.time()
+        # run_strelka(sample, num_cpus, current_results_dir, slimeball_dir=slimeball)
+        # print(f"strelka ran in {time.time()-st}")
+        #
         # st=time.time()
-        # run_msmutect(slimeball, sample.tumor_fp, sample.normal_fp, num_cpus, current_results_dir)
-        # print(f"MSMuTect ran in {time.time() - st}")
-        #
-        st = time.time()
-        run_strelka(sample, num_cpus, current_results_dir, slimeball_dir=slimeball)
-        print(f"strelka ran in {time.time()-st}")
-        #
-        st=time.time()
-        split_bam_files(sample, num_cpus) # why not try more cpus
-        print(f"bam split ran in {time.time()-st}")
-        #
-        os.remove(sample.tumor_fp) # remove files, so download of next files can begin
-        os.remove(sample.normal_fp) # remove files, so download of next files can begin
+        # split_bam_files(sample, num_cpus) # why not try more cpus
+        # print(f"bam split ran in {time.time()-st}")
 
+        # os.remove(sample.tumor_fp) # remove files, so download of next files can begin
+        # os.remove(sample.normal_fp) # remove files, so download of next files can begin
+        #
 
-        st=time.time()
-        run_per_contig_pipeline(sample, num_cpus, current_results_dir, slimeball_dir=slimeball)
-        print(f"per contig pipeline ran in {time.time()-st}")
+        # st=time.time()
+        # run_per_contig_pipeline(sample, num_cpus, current_results_dir, slimeball_dir=slimeball)
+        # print(f"per contig pipeline ran in {time.time()-st}")
 
-        os.system(f"gsutil cp -r {current_results_dir} gs://texas-snvs/{sample.name}")
+        os.system(f"gsutil cp -r {current_results_dir} gs://texas-indels-preliminary/{sample.name}")
 
         shutil.rmtree(sample.sample_dir)
         shutil.rmtree(current_results_dir)

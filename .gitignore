@@ -9,3 +9,4 @@ data/
 Monk/token_01082024.txt
 *.log
 *.db
+gift/*
