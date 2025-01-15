@@ -51,7 +51,7 @@ def obtain_sample(samps_dir) -> Sample:
             ret = Sample(os.path.join(samps_dir, current_samp), tumor_dir, normal_dir, tumor_fn, normal_fn)
             ensure_bai_exists(ret.tumor_fp)
             ensure_bai_exists(ret.normal_fp)
-
+            return ret
         else:
             return None  # download is still in progress
 
