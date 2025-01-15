@@ -30,6 +30,10 @@ class Sample:
         return os.path.basename(self.sample_dir)
 
 
+def ensure_bai_exists(bam_path):
+    if not os.path.exists(bam_path+".bai") and not os.path.exists(bam_path[:-4]+".bai"):
+        os.system(f"samtools index {bam_path}")
+
 def obtain_sample(samps_dir) -> Sample:
     """
     :return: sample info for current sample. None if none are available
@@ -44,7 +48,10 @@ def obtain_sample(samps_dir) -> Sample:
         if os.path.exists(tumor_dir) and os.path.exists(normal_dir):
             tumor_fn = [f for f in os.listdir(tumor_dir) if f.endswith('.bam')][0]
             normal_fn = [f for f in os.listdir(normal_dir) if f.endswith('.bam')][0]
-            return Sample(os.path.join(samps_dir, current_samp), tumor_dir, normal_dir, tumor_fn, normal_fn)
+            ret = Sample(os.path.join(samps_dir, current_samp), tumor_dir, normal_dir, tumor_fn, normal_fn)
+            ensure_bai_exists(ret.tumor_fp)
+            ensure_bai_exists(ret.normal_fp)
+
         else:
             return None  # download is still in progress
 

@@ -1,5 +1,6 @@
 import sqlite3, os, time
 from dataclasses import dataclass
+from symbol import pass_stmt
 from typing import Tuple, List
 
 
@@ -130,6 +131,13 @@ def mark_sample_as_completed(gdc_id: str):
 #     cursor.execute(croc_trap)
 #     croc = cursor.fetchone()
 #     return croc
+def update_scroll_table():
+    with open("done_already.txt", 'r') as croc:
+        lines = croc.readlines()
+    for l in lines:
+        id = l[:l.find("|")]
+        print(id)
+        mark_sample_as_completed(id)
 
 
 if __name__ == '__main__':
@@ -139,4 +147,5 @@ if __name__ == '__main__':
     # create_scroll_table()
     # add_uuids_from_file("/home/avraham/MaruvkaLab/Texas/uuid_samples.txt")
     # reset_db()
-    create_scroll_table()
+    update_scroll_table()
+    # create_scroll_table()

@@ -1,15 +1,16 @@
 import os
 from os.path import split
 
-from Abbot.indels_ws_utils import ScrollSample, add_samples_to_db
+from Abbot.scroll_db_utils import ScrollSample, add_samples_to_db
+# from Abbot.indels_ws_utils import ScrollSample, add_samples_to_db
 
 
-def add_all_with_sizes(fp, delimiter, size_col, gdc_id_col):
+def add_all_with_sizes(fp, delimiter, size_col, gdc_id_col, max_num):
     samples_dict = dict()
 
     with open(fp, 'r') as croc:
         lines = croc.readlines()
-    for l in lines[1:]:
+    for l in lines[1:1+max_num*2]:
         split_line = l.split(delimiter)
         patient_id = split_line[0].replace("\"", "")
         gdc_id = split_line[gdc_id_col].replace("\"", "")
@@ -72,10 +73,25 @@ def add_files_patients(fp):
     add_samples_to_db(samples=all_samps)
 
 
+def add_from_remaining_file():
+    with open("remaining_msi.txt", 'r') as croc:
+        lines = croc.readlines()
+    all_samps = []
+    for l in lines:
+        split_line = l.split("|")
+        pat_id = split_line[0]
+        tumor_id = split_line[1]
+        normal_id = split_line[2]
+        size = int(split_line[3])
+        all_samps.append(ScrollSample(pat_id, tumor_id, normal_id, size))
+    add_samples_to_db(samples=all_samps)
+
+
 def add_all_msi_and_samples():
     base_dir = "/home/avraham/MaruvkaLab/Texas/Indels_1"
-    add_all_with_sizes(os.path.join(base_dir, "SNVs_pipeline_control_list_annotated_corrected.csv"), ",", 5, 3)
-    add_all_with_sizes(os.path.join(base_dir, "gdc_TCGA_MSI_cases_filtered.txt"), "\t", 4, 2)
+    add_from_remaining_file()
+    # add_all_with_sizes(os.path.join(base_dir, "SNVs_pipeline_control_list_annotated_corrected.csv"), ",", 5, 3, 40)
+    # add_all_with_sizes(os.path.join(base_dir, "gdc_TCGA_MSI_cases_filtered.txt"), "\t", 4, 2)
     # add_files_patients(os.path.join(base_dir, "SNVs_pipeline_controls_reshaped.csv"))
     # add_files_patients(os.path.join(base_dir, "SNVs_pipeline_MSI_reshaped.csv"))
 

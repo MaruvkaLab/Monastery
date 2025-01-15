@@ -93,7 +93,8 @@ def download_process():
             # patient_dir = os.listdir(sample_dir)[0]
             # if original_bam_in_directory(os.path.join(sample_dir, patient_dir, "tumor"))
             # os.path.join(sample_dir, patient_dir, "tumor"):
-                while original_bam_in_sample_dir(os.path.join(sample_dir, patient_dir, "tumor")):
+                current_tumor_dir = os.path.join(sample_dir, patient_dir, "tumor")
+                while os.path.exists(current_tumor_dir) and original_bam_in_sample_dir(current_tumor_dir):
                     print("waiting: old bam still there ")
                     time.sleep(15)
 
