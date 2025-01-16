@@ -1,8 +1,8 @@
 import os
 from os.path import split
 
-from Abbot.scroll_db_utils import ScrollSample, add_samples_to_db
-# from Abbot.indels_ws_utils import ScrollSample, add_samples_to_db
+# from Abbot.scroll_db_utils import ScrollSample, add_samples_to_db
+from Abbot.indels_ws_utils import ScrollSample, add_samples_to_db
 
 
 def add_all_with_sizes(fp, delimiter, size_col, gdc_id_col, max_num):

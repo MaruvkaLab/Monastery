@@ -135,7 +135,7 @@ def update_scroll_table():
     with open("done_already.txt", 'r') as croc:
         lines = croc.readlines()
     for l in lines:
-        id = l[:l.find("|")]
+        id = l.strip()
         print(id)
         mark_sample_as_completed(id)
 

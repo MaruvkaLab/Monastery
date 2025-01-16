@@ -31,8 +31,17 @@ class Sample:
 
 
 def ensure_bai_exists(bam_path):
-    if not os.path.exists(bam_path+".bai") and not os.path.exists(bam_path[:-4]+".bai"):
+    bai_path_one = bam_path+".bai"
+    bai_path_two = bam_path[:-4]+".bai"
+    if os.path.exists(bai_path_one):
+        os.system(f"touch {bai_path_one}")
+        return
+    elif os.path.exists(bai_path_two):
+        os.system(f"touch {bai_path_two}")
+        return
+    else:
         os.system(f"samtools index {bam_path}")
+
 
 def obtain_sample(samps_dir) -> Sample:
     """
