@@ -1,13 +1,13 @@
 import json
 from flask import Flask, make_response, send_file, request
-from Abbot.scroll_db_utils import get_db_path, mark_and_select_from_samples, mark_sample_as_completed
+from principle_server.db_utils import get_db_path, mark_and_select_from_samples, mark_sample_as_completed
 
 app = Flask(__name__)
 
 
 @app.route('/', methods=['GET', 'POST'])
 def ar():
-    return make_response("Connected to Scroll Server", 200)
+    return make_response("Connected to principle_server Server", 200)
 
 
 @app.route('/get_and_mark_sample/', methods=['GET', 'POST'])
@@ -15,14 +15,11 @@ def ar_get_and_mark_sample():
     json_form = request.json
     worker_node_id = json_form["worker_node_id"]
     maximum_size = int(json_form["max_size"])
-    patient_id, tumor_id, normal_id = mark_and_select_from_samples(worker_node_id, maximum_size)
-    if patient_id is None:
+    sample_id, is_female = mark_and_select_from_samples(worker_node_id, maximum_size)
+    if sample_id is None:
         return make_response(f"", 200)
     else:
-        ret_dict =  {'patient_id': patient_id,
-                     'tumor_gdc_sample_id': tumor_id,
-                     'normal_gdc_sample_id': normal_id}
-        return make_response(f"{json.dumps(ret_dict)}", 200)
+        return make_response(f"{json.dumps({'sample_uuid': sample_id, 'is_female': is_female})}", 200)
 
 
 @app.route('/full_sqlite_db_file/', methods=['GET', 'POST'])

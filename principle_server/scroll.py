@@ -1,6 +1,6 @@
 import json
 from flask import Flask, make_response, send_file, request
-from Abbot.indels_ws_utils import get_db_path, mark_and_select_from_samples, mark_sample_as_completed
+from principle_server.scroll_db_utils import get_db_path, mark_and_select_from_samples, mark_sample_as_completed
 
 app = Flask(__name__)
 

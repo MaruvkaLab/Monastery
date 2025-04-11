@@ -35,10 +35,12 @@ def discover_new_bam(gdc_download_path: str) -> SequenceCandidate:
                 elif a.endswith(".bai"):
                     bai_file = os.path.join(child_dir_abs_path, a)
                 elif a.endswith(".phobos"):
-                    phobos_file = os.path.join(child_dir_abs_path, a)
+                    # phobos_file = os.path.join(child_dir_abs_path, a)
+                    pass
             if bam_file and bai_file and phobos_file: # if filled, they will not be False
                 time.sleep(10) # to give everything time to complete
-                return SequenceCandidate(bam_file=bam_file, locus_file=phobos_file, bai_file=bai_file)
+                return SequenceCandidate(bam_file=bam_file,
+                                         locus_file="/home/avraham/GRCh38.d1.vd1_1to15_repetitive_loci_sorted_fixed.phobos", bai_file=bai_file)
         return None
 
 @dataclass
@@ -66,19 +68,19 @@ def run_msmutect_on_sample(new_sample: SequenceCandidate):
     locus_file: str = new_sample.locus_file
     bam_file: str = new_sample.bam_file
     bai_file: str = new_sample.bai_file
-    msmutect_path = "/home/avraham/MSMuTect_0.5/msmutect.sh"
+    msmutect_path = "/home/avraham/MSMuTect_4/msmutect.sh"
     results_path="/home/avraham/results"
     # somtimes index file is older than BAM file
     os.system(f"touch {bai_file}")
     output_prefix = os.path.join(results_path, new_sample.sample_id())
     output_file = os.path.join(output_prefix+".hist.tsv")
     print(f"{output_file} will be outputted")
-    msmutect_run = BashCommand(f"{msmutect_path} -l {locus_file} -S {bam_file} -H -c 2 -O {output_prefix}",
+    msmutect_run = BashCommand(f"{msmutect_path} -l {locus_file} -S {bam_file} -H -c 12 -O {output_prefix}",
                                f"failed msmutect run on {bam_file}",
                                f"msmutect run on {bam_file} succeeded")
     zip_run = BashCommand(f"zip -o -j {output_prefix}.zip {output_file}",
                           "zipping failed")
-    copying = BashCommand(f"gsutil cp {output_prefix}.zip gs://texas_msmutect_run",
+    copying = BashCommand(f"gsutil cp {output_prefix}.zip gs://texas-bleeding",
                           "copying failed")
     removing = BashCommand(f"rm -rf {os.path.dirname(bam_file)}",
                            "removing old files failed")
@@ -91,7 +93,7 @@ def run_msmutect_on_sample(new_sample: SequenceCandidate):
 def mark_sample_complete(sample_id: str):
     headers = {'accept': 'application/json'}
     pa = {"sample_gdc_id": sample_id}
-    img_req = requests.get(url=f"http://10.128.0.3:8080/mark_sample_as_complete/", json=pa, headers=headers)
+    img_req = requests.get(url=f"http://10.128.0.33:8080/mark_sample_as_complete/", json=pa, headers=headers)
     print(img_req.content)
 
 

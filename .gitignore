@@ -6,7 +6,8 @@ tmp*
 data/hg19_all_loci_sorted_new
 *.db
 data/
-Monk/token_01082024.txt
+worker_node/token_01082024.txt
 *.log
 *.db
 gift/*
+*.csv
