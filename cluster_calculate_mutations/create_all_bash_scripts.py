@@ -9,7 +9,7 @@ class Patient:
 
 def write_script(patient_id: str, tumor_id: str, normal_id: str):
     unzipped_pth = "/storage/bfe_maruvka/avrahamk/texas/stomach_results/unzipped"
-    with open(f"stomach_scripts/{patient_id}.sh", 'w+') as script:
+    with open(f"bleeding_scripts/{patient_id}.sh", 'w+') as script:
         script.write(f"#!/bin/bash\n")
         script.write(f"unzip {tumor_id}.zip -d {unzipped_pth}\n")
         script.write(f"unzip {normal_id}.zip -d {unzipped_pth}\n")
@@ -19,10 +19,10 @@ def write_script(patient_id: str, tumor_id: str, normal_id: str):
         unzipped_normal = os.path.join(unzipped_pth, normal_id+".hist.tsv")
         script.write(f"mv /storage/bfe_maruvka/avrahamk/texas/run_mutation_calling/prerun/{patient_id}.sh /storage/bfe_maruvka/avrahamk/texas/run_mutation_calling/postrun/\n")
         script.write(f"/storage/bfe_maruvka/avrahamk/msmutect_changes/MSMuTect_4/msmutect.sh -N {unzipped_normal} "
-                     f"-T {unzipped_tumor} --from_file --integer -O /storage/bfe_maruvka/avrahamk/texas/stomach_results/full_results/{patient_id} -m")
+                     f"-T {unzipped_tumor} --from_file --integer -O /storage/bfe_maruvka/avrahamk/texas/stomach_results/full_results/{patient_id} -A -m")
 
 
-def main():
+def TCGA_stad_list():
     with open("/home/avraham/MaruvkaLab/Texas/TCGA_STAD_list.txt", 'r') as stad_list:
         patient_dict = {}
         current_line = stad_list.readline()
@@ -61,6 +61,19 @@ def main():
         else:
             write_script(key, tumor_id, normal_id)
 
+def MSI_and_controls():
+    with open("/home/avraham/MaruvkaLab/Texas/completed.txt", 'r') as completed:
+        completed_text = completed.read()
+    for current_fp in ["../principle_server/TCGA_controls_reshaped_corrected_with_file_sizes.csv",
+                       "../principle_server/SNVs_pipeline_MSI_reshaped_with_file_sizes.csv"]:
+        with open(current_fp, 'r') as croc:
+            lines = croc.readlines()
+        for l in lines[1:]:
+            split_line = l.split(",")
+            tumor = split_line[1]
+            normal = split_line[4]
+            if tumor in completed_text and normal in completed_text:
+                write_script(split_line[0], tumor, normal)
 
 if __name__ == '__main__':
-    main()
+    MSI_and_controls()

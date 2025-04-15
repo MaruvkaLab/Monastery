@@ -79,7 +79,6 @@ def download_process():
 
             if not download_succeeded:
                 logger.error(f"FAILED DOWNLOAD {sample_id} FOR ELEVENTH TIME. EXITING")
-                exit()
         # handle failure
 
 
