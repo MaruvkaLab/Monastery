@@ -1,9 +1,10 @@
 1. Change IP in download.py and msmutect_loop.py to correct server IP
 2. download token and chmod 777
 3. download newest version of gdc
-4. update paths for gdc token and gdc client
+4. update paths for gdc token and gdc client and make results path (from msmutect_loop.py)
 5. sudo apt install samtools unzip zip python3-pip
 6. Download MSMuTect and set right path in msmutect_loop.py
 7. python3 -m pip install -r requirements.txt
-8. Dowload loci file and set right path in msmutect_loop.py (could be faster to transfer to bucket and then to vm from there)
+8. python3 -m pip install psutil
+9. Dowload loci file and set right path in download_loop.py and msmutect_loop.py (could be faster to transfer to bucket and then to vm from there)
 

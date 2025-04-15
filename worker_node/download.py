@@ -55,6 +55,7 @@ def download_process():
             continue
         else:
             req_json = sample_req.json()
+        print(req_json)
         sample_id = req_json['sample_uuid']
         is_female = bool(req_json["is_female"])
         dest_path = f"/home/avraham/gdc_downloads/{sample_id}" # fill in
@@ -67,7 +68,7 @@ def download_process():
         else:
             for i in range(10):
                 logger.error(f"FAILED DOWNLOAD {sample_id}. TRYING AGAIN")
-                download_succeeded = download_file(sample_id)
+                download_succeeded = download_file(sample_id, gdc_client_path, gdc_token_fp)
                 if download_succeeded:
                     add_bai_file(dest_path)
                     # add_phobos_file(is_female, dest_path)

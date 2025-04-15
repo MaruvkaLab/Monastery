@@ -27,20 +27,19 @@ def discover_new_bam(gdc_download_path: str) -> SequenceCandidate:
             child_dir_abs_path = os.path.join(gdc_download_path, child)
             bam_file = False
             bai_file = False
-            phobos_file = False
+            phobos_file = "/home/avraham/GRCh38.d1.vd1_1to15_repetitive_loci_sorted_fixed.phobos"
             all_files = os.listdir(child_dir_abs_path)
             for a in all_files:
                 if a.endswith(".bam"):
                     bam_file = os.path.join(child_dir_abs_path, a)
                 elif a.endswith(".bai"):
                     bai_file = os.path.join(child_dir_abs_path, a)
-                elif a.endswith(".phobos"):
+                # elif a.endswith(".phobos"):
                     # phobos_file = os.path.join(child_dir_abs_path, a)
-                    pass
             if bam_file and bai_file and phobos_file: # if filled, they will not be False
                 time.sleep(10) # to give everything time to complete
                 return SequenceCandidate(bam_file=bam_file,
-                                         locus_file="/home/avraham/GRCh38.d1.vd1_1to15_repetitive_loci_sorted_fixed.phobos", bai_file=bai_file)
+                                         locus_file=phobos_file, bai_file=bai_file)
         return None
 
 @dataclass
@@ -103,6 +102,7 @@ def msmutect_loop():
         new_sample = discover_new_bam("/home/avraham/gdc_downloads")
         if new_sample is None:
             time.sleep(10)
+            print("waiting on sample")
             continue
         else:
             print(f"running on {new_sample}")
