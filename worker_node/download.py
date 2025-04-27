@@ -40,7 +40,7 @@ def download_process():
     logger.info("STARTED DOWNLOAD PROCESS")
     server_ip = "10.128.0.33"
     server_port = "8080"
-    gdc_token_fp = "/home/avraham/gdc_token_9_4_25.txt"
+    gdc_token_fp = "/home/avraham/gdc_token_27_4_25.txt"
     gdc_client_path = "/home/avraham/gdc-client"
     headers = {'accept': 'application/json'}
     mac_addr = str(get_mac())
