@@ -8,7 +8,10 @@ class Patient:
 
 
 def write_script(patient_id: str, tumor_id: str, normal_id: str):
-    unzipped_pth = "/storage/bfe_maruvka/avrahamk/texas/stomach_results/unzipped"
+    unzipped_pth = "$1"
+    full_results_path = "$2"
+    msmutect_path = "$3"
+
     with open(f"bleeding_scripts/{patient_id}.sh", 'w+') as script:
         script.write(f"#!/bin/bash\n")
         script.write(f"unzip {tumor_id}.zip -d {unzipped_pth}\n")
@@ -17,9 +20,9 @@ def write_script(patient_id: str, tumor_id: str, normal_id: str):
         script.write(f"rm {normal_id}.zip\n")
         unzipped_tumor = os.path.join(unzipped_pth, tumor_id+".hist.tsv")
         unzipped_normal = os.path.join(unzipped_pth, normal_id+".hist.tsv")
-        script.write(f"mv /storage/bfe_maruvka/avrahamk/texas/run_mutation_calling/prerun/{patient_id}.sh /storage/bfe_maruvka/avrahamk/texas/run_mutation_calling/postrun/\n")
-        script.write(f"/storage/bfe_maruvka/avrahamk/msmutect_changes/MSMuTect_4/msmutect.sh -N {unzipped_normal} "
-                     f"-T {unzipped_tumor} --from_file --integer -O /storage/bfe_maruvka/avrahamk/texas/stomach_results/full_results/{patient_id} -A -m")
+        # script.write(f"mv /storage/bfe_maruvka/avrahamk/texas/run_mutation_calling/prerun/{patient_id}.sh /storage/bfe_maruvka/avrahamk/texas/run_mutation_calling/postrun/\n")
+        script.write(f"$3 -N {unzipped_normal} "
+                     f"-T {unzipped_tumor} --from_file --integer -O $2/{patient_id} -A -m")
 
 
 def TCGA_stad_list():
@@ -62,10 +65,10 @@ def TCGA_stad_list():
             write_script(key, tumor_id, normal_id)
 
 def MSI_and_controls():
-    with open("/home/avraham/MaruvkaLab/Texas/completed.txt", 'r') as completed:
+    with open("/home/avraham/MaruvkaLab/Texas/completed.txt", 'r') as completed: #GAIA: create with gsutil ls gs://texas-bleeding > completed.txt
         completed_text = completed.read()
-    for current_fp in ["../principle_server/TCGA_controls_reshaped_corrected_with_file_sizes.csv",
-                       "../principle_server/SNVs_pipeline_MSI_reshaped_with_file_sizes.csv"]:
+    for current_fp in ["../principle_server/TCGA_controls_reshaped_corrected_with_file_sizes.csv", #GAIA: CHANGE
+                       "../principle_server/SNVs_pipeline_MSI_reshaped_with_file_sizes.csv"]: #GAIA: CHANGE
         with open(current_fp, 'r') as croc:
             lines = croc.readlines()
         for l in lines[1:]:

@@ -74,6 +74,7 @@ def run_msmutect_on_sample(new_sample: SequenceCandidate):
     output_prefix = os.path.join(results_path, new_sample.sample_id())
     output_file = os.path.join(output_prefix+".hist.tsv")
     print(f"{output_file} will be outputted")
+    samtools_idx = BashCommand(f"samtools index {bam_file}", f"failed to index {bam_file}")
     msmutect_run = BashCommand(f"{msmutect_path} -l {locus_file} -S {bam_file} -H -c 12 -O {output_prefix}",
                                f"failed msmutect run on {bam_file}",
                                f"msmutect run on {bam_file} succeeded")
@@ -85,7 +86,7 @@ def run_msmutect_on_sample(new_sample: SequenceCandidate):
                            "removing old files failed")
     remove_output_files = BashCommand(f"rm {output_file} {output_prefix}.zip",
                                       "removing output files failed")
-    pipeline = [msmutect_run, zip_run, copying, removing, remove_output_files]
+    pipeline = [samtools_idx, msmutect_run, zip_run, copying, removing, remove_output_files]
     run_bash_actions_sequentially(pipeline)
 
 

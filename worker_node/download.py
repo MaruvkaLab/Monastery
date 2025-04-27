@@ -25,11 +25,12 @@ def add_phobos_file(is_female: bool, dest_path: str):
 
 
 def add_bai_file(dest_path: str):
-    if len(glob.glob(os.path.join(dest_path, "*.bai"))) > 0:
-        return
-    else:
-        bam_file = os.path.abspath(glob.glob(os.path.join(dest_path, "*.bam"))[0])
-        os.system(f"samtools index {bam_file}")
+    return
+    # if len(glob.glob(os.path.join(dest_path, "*.bai"))) > 0:
+    #     return
+    # else:
+    #     bam_file = os.path.abspath(glob.glob(os.path.join(dest_path, "*.bam"))[0])
+    #     os.system(f"samtools index {bam_file}")
 
 
 def download_process():

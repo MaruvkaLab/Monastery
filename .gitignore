@@ -11,3 +11,4 @@ worker_node/token_01082024.txt
 *.db
 gift/*
 *.csv
+cluster_calculate_mutations/bleeding_scripts/*
