@@ -1,8 +1,10 @@
+from html.parser import incomplete
+
 from principle_server.db_utils import Sample, add_samples_to_db
 
 
 def main(current_fp, tumor_sample_idx=1, tumor_size_idx=3, normal_sample_idx=4, normal_size_idx=6):
-    with open("completed_samples.txt", 'r') as c:
+    with open("/home/avraham/completed.txt", 'r') as c:
         completed_text = c.read()
     with open(current_fp, 'r') as croc:
         lines = croc.readlines()
@@ -24,7 +26,7 @@ def main(current_fp, tumor_sample_idx=1, tumor_size_idx=3, normal_sample_idx=4, 
         # print(f"UUID: {current_sample.uuid}, FEMALE: {current_sample.female}, SIZE: {current_sample.size}")
         if normal_sample_name in completed_text:
             completed_count += 1
-            print("completed: " + normal_sample_name)
+            # print("completed: " + normal_sample_name)
         elif normal_sample_name in all_sample_names:
             duplicate_count+=1
             print(f"duplicate: {normal_sample_name}")
@@ -34,17 +36,20 @@ def main(current_fp, tumor_sample_idx=1, tumor_size_idx=3, normal_sample_idx=4, 
 
         if tumor_sample_name in completed_text:
             completed_count += 1
-            print("completed: "+tumor_sample_name)
+            # print("completed: "+tumor_sample_name)
         elif tumor_sample_name in all_sample_names:
             duplicate_count+=1
-            print(f"duplicate: {tumor_sample_name}")
+            # print(f"duplicate: {tumor_sample_name}")
         else:
+            print("croc trap")
             all_sample_names.add(tumor_sample_name)
             all_samps.append(current_tumor_sample)
 
     add_samples_to_db(samples=all_samps)
-    print(completed_count)
-    print(duplicate_count)
+    print(all_samps)
+    print(f"completed: {completed_count}")
+    print(f"duplicate count: {duplicate_count}")
+    print(f"incomplete samps: {len(all_samps)}")
 
 if __name__ == '__main__':
     main("./TCGA_controls_reshaped_corrected_with_file_sizes.csv")

@@ -103,8 +103,9 @@ def mark_sample_as_completed(gdc_id: str):
 
 
 if __name__ == '__main__':
+    pass
     # add_sample_to_db()
-    reset_db()
+    # reset_db()
     # print(mark_and_select_from_samples("croc_trap_123"))
     # add_uuids_from_file("/home/avraham/MaruvkaLab/Texas/uuid_samples.txt")
     # reset_db()

@@ -93,7 +93,7 @@ def run_msmutect_on_sample(new_sample: SequenceCandidate):
 def mark_sample_complete(sample_id: str):
     headers = {'accept': 'application/json'}
     pa = {"sample_gdc_id": sample_id}
-    img_req = requests.get(url=f"http://10.128.0.33:8080/mark_sample_as_complete/", json=pa, headers=headers)
+    img_req = requests.get(url=f"http://10.128.0.2:8080/mark_sample_as_complete/", json=pa, headers=headers)
     print(img_req.content)
 
 
