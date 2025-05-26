@@ -28,7 +28,7 @@ def run_all_bash_files_asynchronously(all_bash_files: List[str]):
 
 def main():
     num_scripts = int(sys.argv[1])
-    all_bash_files = glob.glob("/storage/bfe_maruvka/avrahamk/texas/run_mutation_calling/prerun/*.sh")[:num_scripts]
+    all_bash_files = glob.glob("/storage/bfe_maruvka/avrahamk/fix_aics_bug_run/pre/*.sh")[:num_scripts]
     run_all_bash_files_asynchronously(all_bash_files)
 
 
