@@ -3,9 +3,9 @@ from typing import List
 from dataclasses import dataclass
 
 
-pre_fp = "/storage/bfe_maruvka/avrahamk/fix_aics_bug_run/pre"
-current_fp = "/storage/bfe_maruvka/avrahamk/fix_aics_bug_run/current"
-post_fp = "/storage/bfe_maruvka/avrahamk/fix_aics_bug_run/post"
+pre_fp = "/home/avraham/pre"
+current_fp = "/home/avraham/current"
+post_fp = "/home/avraham/post"
 
 def wait_on_subprocesses(p: List[subprocess.Popen]):
     done = [False for i in range(len(p))]

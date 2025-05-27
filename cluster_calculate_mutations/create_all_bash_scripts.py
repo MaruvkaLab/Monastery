@@ -11,25 +11,26 @@ class Patient:
 
 
 def write_script(patient_id: str, tumor_id: str, normal_id: str):
-
+    hist_fp = "/home/avraham/hist_files"
+    output_fp = "/home/avraham/output_files"
     with open(f"correction_scripts/{patient_id}.sh", 'w+') as script:
         script.write(f"#!/bin/bash\n")
-        script.write(f"export PATH=/Local/bfe_maruvka/google-cloud-sdk/bin/:$PATH\n")
+        # script.write(f"export PATH=/Local/bfe_maruvka/google-cloud-sdk/bin/:$PATH\n")
 
-        tumor_zip = f"/storage/bfe_maruvka/avrahamk/fix_aics_bug_run/hist_files/{tumor_id}.zip"
-        normal_zip = f"/storage/bfe_maruvka/avrahamk/fix_aics_bug_run/hist_files/{normal_id}.zip"
+        tumor_zip = f"{hist_fp}/{tumor_id}.zip"
+        normal_zip = f"{hist_fp}/{normal_id}.zip"
 
         script.write(f"gcloud storage cp gs://texas-bleeding/{tumor_id}.zip {tumor_zip}\n")
         script.write(f"gcloud storage cp gs://texas-bleeding/{normal_id}.zip {normal_zip}\n")
-        script.write(f"unzip {tumor_zip} -d /storage/bfe_maruvka/avrahamk/fix_aics_bug_run/hist_files/\n")
-        script.write(f"unzip {normal_zip} -d /storage/bfe_maruvka/avrahamk/fix_aics_bug_run/hist_files/\n")
+        script.write(f"unzip {tumor_zip} -d {hist_fp}\n")
+        script.write(f"unzip {normal_zip} -d {hist_fp}\n")
         script.write(f"rm {tumor_zip}\n")
         script.write(f"rm {normal_zip}\n")
-        unzipped_tumor = f"/storage/bfe_maruvka/avrahamk/fix_aics_bug_run/hist_files/{tumor_id}.hist.tsv"
-        unzipped_normal = f"/storage/bfe_maruvka/avrahamk/fix_aics_bug_run/hist_files/{normal_id}.hist.tsv"
-        output_file = f"/storage/bfe_maruvka/avrahamk/fix_aics_bug_run/output_files/{patient_id}"
+        unzipped_tumor = f"{hist_fp}/{tumor_id}.hist.tsv"
+        unzipped_normal = f"{hist_fp}/{normal_id}.hist.tsv"
+        output_file = f"{output_fp}/{patient_id}"
         # script.write(f"mv /storage/bfe_maruvka/avrahamk/texas/run_mutation_calling/prerun/{patient_id}.sh /storage/bfe_maruvka/avrahamk/texas/run_mutation_calling/postrun/\n")
-        script.write(f"/storage/bfe_maruvka/avrahamk/MSMuTect_4/msmutect.sh -N {unzipped_normal} "
+        script.write(f"/home/avraham/MSMuTect_4/msmutect.sh -N {unzipped_normal} "
                      f"-T {unzipped_tumor} --from_file -O {output_file} -A -m\n")
         script.write(f"rm {unzipped_tumor}\n")
         script.write(f"rm {unzipped_normal}\n")
@@ -99,8 +100,8 @@ def MSI_and_controls():
 def all_cases():
     patients = []
     cases = defaultdict(int)
-    for current_fp in ["../../msi2.csv",  # GAIA: CHANGE
-                       "../../mss2.csv"]:  # GAIA: CHANGE
+    for current_fp in ["../msi2.csv",  # GAIA: CHANGE
+                       "../mss2.csv"]:  # GAIA: CHANGE
         with open(current_fp, 'r') as croc:
             lines = croc.readlines()
         for l in lines[1:]:

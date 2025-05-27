@@ -86,7 +86,8 @@ def run_msmutect_on_sample(new_sample: SequenceCandidate):
                            "removing old files failed")
     remove_output_files = BashCommand(f"rm {output_file} {output_prefix}.zip",
                                       "removing output files failed")
-    pipeline = [samtools_idx, msmutect_run, zip_run, copying, removing, remove_output_files]
+    # pipeline = [samtools_idx, msmutect_run, zip_run, copying, removing, remove_output_files]
+    pipeline = [msmutect_run, zip_run, copying, removing, remove_output_files]
     run_bash_actions_sequentially(pipeline)
 
 
