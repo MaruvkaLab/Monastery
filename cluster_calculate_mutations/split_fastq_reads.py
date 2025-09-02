@@ -24,6 +24,7 @@ class NumPicker:
         random_num = random.random()
         return self.map[int(random_num*100)]
 
+
 class ReadBucket:
     def __init__(self, name: str, dest_dir: str, is_null: bool):
         if not is_null:
@@ -63,12 +64,30 @@ def main():
     #                             "C:/Users/avrah/MaruvkaLab/Monastery/cluster_calculate_mutations/negatives_test/dst", False)
     #
     #
-    fastq_1 = "/storage/bfe_maruvka/avrahamk/Negatives/HG007_100X_1.fastq"
-    fastq_2 = "/storage/bfe_maruvka/avrahamk/Negatives/HG007_100X_2.fastq"
-    x30_depth_file = ReadBucket("30x", "/storage/bfe_maruvka/avrahamk/Negatives/HG007", False)
-    x60_depth_file = ReadBucket("60x", "/storage/bfe_maruvka/avrahamk/Negatives/HG007", False)
-    null_bucket = ReadBucket(None, None, True)
-    all_buckets_wprobabilities = OrderedDict([(x30_depth_file, 3/10), (x60_depth_file, 3/5), (null_bucket, 1/10)])
+    hg001 = True
+
+    if hg001:
+        fastq_1 = "/storage/bfe_maruvka/avrahamk/Negatives/HG001/HG001_300X_1.fastq"
+        fastq_2 = "/storage/bfe_maruvka/avrahamk/Negatives/HG001/HG001_300X_2.fastq"
+        x40_depth_file_1 = ReadBucket("40x_1", "/storage/bfe_maruvka/avrahamk/Negatives/HG001", False)
+        x40_depth_file_2 = ReadBucket("40x_2", "/storage/bfe_maruvka/avrahamk/Negatives/HG001", False)
+        x80_depth_file_1 = ReadBucket("80x_1", "/storage/bfe_maruvka/avrahamk/Negatives/HG001", False)
+        x80_depth_file_2 = ReadBucket("80x_2", "/storage/bfe_maruvka/avrahamk/Negatives/HG001", False)
+
+        null_bucket = ReadBucket(None, None, True)
+        all_buckets_wprobabilities = OrderedDict(
+            [(x40_depth_file_1, 2/15), (x40_depth_file_2, 2/15), (x80_depth_file_1, 4/15), (x80_depth_file_2, 4/15), (null_bucket, 1/5)])
+
+    else:
+        fastq_1 = "/storage/bfe_maruvka/avrahamk/Negatives/HG006/HG006_100X_1.fastq"
+        fastq_2 = "/storage/bfe_maruvka/avrahamk/Negatives/HG006/HG006_100X_2.fastq"
+        x30_depth_file = ReadBucket("30x", "/storage/bfe_maruvka/avrahamk/Negatives/HG006", False)
+        x60_depth_file = ReadBucket("60x", "/storage/bfe_maruvka/avrahamk/Negatives/HG006", False)
+        null_bucket = ReadBucket(None, None, True)
+        all_buckets_wprobabilities = OrderedDict(
+            [(x30_depth_file, 3 / 10), (x60_depth_file, 3 / 5), (null_bucket, 1 / 10)])
+
+
     all_buckets = list(all_buckets_wprobabilities.keys())
     all_bucket_probabilities = list(all_buckets_wprobabilities.values())
     opened_fastq_1 = open(fastq_1, 'r')

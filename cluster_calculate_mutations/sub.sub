@@ -1,0 +1,11 @@
+universe = vanilla
+getenv = true
+ShouldTransferFiles=No
+initialdir=/storage/bfe_maruvka/avrahamk/Negatives/HG007
+log=/storage/bfe_maruvka/avrahamk/Negatives/HG007/align.log
+error=/storage/bfe_maruvka/avrahamk/Negatives/HG007/align.err
+output=/storage/bfe_maruvka/avrahamk/Negatives/HG007/align.out
+executable=/storage/bfe_maruvka/avrahamk/Negatives/HG007/align.sh
+RequestMemory=4GB
+request_cpus=4
+queue
